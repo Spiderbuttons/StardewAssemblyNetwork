@@ -63,7 +63,11 @@ public static class MemberExtensions
 
         if (member is MethodDefinition method)
         {
-            string parameters = string.Join(", ", method.Parameters.Select(p => $"{p.ParameterType.Resolve().NameNormalized()} {p.Name}"));
+            string parameters = string.Join(", ", method.Parameters.Select(p =>
+            {
+                TypeDefinition? type = p.ParameterType.Resolve();
+                return type is null ? $"{p.ParameterType.Name} {p.Name}" : $"{type.FullNameNormalized()} {p.Name}";
+            }));
 
             if (method.IsSpecialName)
             {
@@ -87,14 +91,6 @@ public static class MemberExtensions
     
     public static string FullNameNormalized<T>(this T member) where T : IMemberDefinition, IGenericParameterProvider
     {
-        // if (member.Name.Contains("KeyValuePair") && member is TypeReference type1)
-        // {
-        //     var type2 = type1.Resolve();
-        //     Console.WriteLine(type2.FullName);
-        //     Console.WriteLine(type2.DeclaringType is null ? "null" : type2.DeclaringType.Name);
-        //     Console.WriteLine(type2.HasGenericParameters ? string.Join(", ", type2.GenericParameters.Select(p => p.Name)) : "no generic params");
-        // }
-        
         Stack<TypeDefinition> parentTypes = new Stack<TypeDefinition>();
         TypeDefinition? currentType = member.DeclaringType;
         while (currentType != null)
