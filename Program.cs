@@ -51,7 +51,7 @@ class Program
 
         foreach (var type in assembly.MainModule.Types)
         {
-            if (type.Name is not "BETAS") continue;
+            // if (type.Name is not "BETAS") continue;
             
             // TODO: Definitely find a better way to do this. Need to recursively find types.
             foreach (var nested in type.NestedTypes)
@@ -68,6 +68,7 @@ class Program
             
             if (type.Name is "<Module>") continue;
             if (type.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
+            if (type.Namespace == "System.Runtime.CompilerServices") continue;
             
             // if (!type.HasGenericParameters) continue;
 
@@ -82,7 +83,25 @@ class Program
             {
                 // if (member.Name is not "DummyFunction") continue;
                 if (member.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
-
+                
+                // var param = member.Parameters[3];
+                // foreach (var propInfo in param.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                // {
+                //     var value = propInfo.GetValue(param);
+                //     if (value is not Mono.Collections.Generic.Collection<CustomAttribute> collection)
+                //     {
+                //         Console.WriteLine($"    {propInfo.Name}: {value}");
+                //         continue;
+                //     } else 
+                //     {
+                //         Console.WriteLine($"    {propInfo.Name}:");
+                //         foreach (var item in collection)
+                //         {
+                //             Console.WriteLine($"      {item.AttributeType.FullName}");
+                //         }
+                //     }
+                // }
+                //
                 Console.WriteLine($"  {type.FullNameNormalized()}.{member.NameNormalized()}");
             }
         }
@@ -93,7 +112,30 @@ public static class MemberExtensions
 {
     public static string NameNormalized<T>(this T member) where T : IMemberDefinition, IGenericParameterProvider
     {
-        string normalized = member.Name;
+        string normalized = member.FullName switch
+        {
+            "System.Boolean" => "bool",
+            "System.Byte" => "byte",
+            "System.SByte" => "sbyte",
+            "System.Char" => "char",
+            "System.Decimal" => "decimal",
+            "System.Double" => "double",
+            "System.Single" => "float",
+            "System.Int32" => "int",
+            "System.UInt32" => "uint",
+            "System.IntPtr" => "nint",
+            "System.UIntPtr" => "nuint",
+            "System.Int64" => "long",
+            "System.UInt64" => "ulong",
+            "System.Int16" => "short",
+            "System.UInt16" => "ushort",
+            "System.String" => "string",
+            "System.Object" => "object",
+            "System.Delegate" => "delegate",
+            _ => string.Empty
+        };
+        if (!string.IsNullOrEmpty(normalized)) return normalized;
+        normalized = member.Name;
 
         if (member.HasGenericParameters)
         {
@@ -107,7 +149,15 @@ public static class MemberExtensions
             string parameters = string.Join(", ", method.Parameters.Select(p =>
             {
                 string nullable = p.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.NullableAttribute") ? "?" : "";
+                
                 bool dynamic = p.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.DynamicAttribute");
+                
+                string isIn = p.IsIn ? "in " : "";
+                string isOut = p.IsOut ? "out " : "";
+                string optional = p.IsOptional ? $" = {p.Constant}" : "";
+                
+                string arraySuffix = p.ParameterType.IsArray || p.ParameterType.Name.Contains("[]") ? "[]" : "";
+                string isRef = p.ParameterType.IsByReference && string.IsNullOrEmpty(isOut) && string.IsNullOrEmpty(isIn) ? "ref " : "";
                 
                 if (dynamic)
                 {
@@ -117,12 +167,15 @@ public static class MemberExtensions
                 try
                 {
                     TypeDefinition? type = p.ParameterType.Resolve();
-                    return type is null ? $"{p.ParameterType.Name}{nullable} {p.Name}" : $"{type.FullNameNormalized()}{nullable} {p.Name}";
+                    arraySuffix = type?.IsArray == true ? "[]" : arraySuffix;
+                    return type is null ? 
+                        $"{isIn}{isOut}{isRef}{p.ParameterType.Name}{nullable}{arraySuffix} {p.Name}{optional}" : 
+                        $"{isIn}{isOut}{isRef}{type.FullNameNormalized()}{nullable}{arraySuffix} {p.Name}{optional}";
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine($"Failed to resolve parameter type for {p.Name} in method {method.FullNameNormalized()}: {e.Message}");
-                    return $"{p.ParameterType.FullName}{nullable} {p.Name}";
+                    return $"{p.ParameterType.FullName}{nullable}{arraySuffix} {p.Name}";
                 }
             }));
 
