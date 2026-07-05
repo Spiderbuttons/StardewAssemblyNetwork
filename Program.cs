@@ -11,7 +11,17 @@ class Program
     static void Main(string[] args)
     {
         DirectoryInfo gameFolder = new DirectoryInfo(GAME_FOLDER);
-        FileInfo? stardewAssembly = gameFolder.GetFiles("Stardew Valley.dll", SearchOption.AllDirectories).FirstOrDefault();
+
+        HashSet<string> foldersWithDLLs = [];
+        foreach (var file in gameFolder.GetFiles("*.dll", SearchOption.AllDirectories))
+        {
+            if (file.Directory is not null)
+            {
+                foldersWithDLLs.Add(file.Directory.FullName);
+            }
+        }
+        
+        FileInfo? stardewAssembly = gameFolder.GetFiles("BETAS.dll", SearchOption.AllDirectories).FirstOrDefault();
         if (stardewAssembly == null)
         {
             Console.WriteLine("Stardew Valley.dll not found in the game folder.");
@@ -19,16 +29,47 @@ class Program
         }
         
         AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(stardewAssembly.FullName);
+        // TODO: Will need to remember to add all the folders with .dll mods in them as search directories.
+        foreach (var folder in foldersWithDLLs) 
+        {
+            (assembly.MainModule.AssemblyResolver as DefaultAssemblyResolver)?.AddSearchDirectory(folder);
+        }
+        
+        // (assembly.MainModule.AssemblyResolver as DefaultAssemblyResolver)?.AddSearchDirectory(gameFolder.FullName);
+        // (assembly.MainModule.AssemblyResolver as DefaultAssemblyResolver)?.AddSearchDirectory(Path.Combine(GAME_FOLDER, "smapi-internal"));
+        
+        foreach (var reference in assembly.MainModule.AssemblyReferences)
+        {
+            AssemblyDefinition? referencedAssembly = assembly.MainModule.AssemblyResolver.Resolve(reference);
+            if (referencedAssembly == null)
+            {
+                Console.WriteLine($"Referenced assembly {reference.FullName} not found.");
+                continue;
+            }
+            // Console.WriteLine($"Referenced assembly: {referencedAssembly.FullName}");
+        }
 
         foreach (var type in assembly.MainModule.Types)
         {
-            // if (type.Name is not "Bimap`2") continue;
-            if (type.Name.Contains("OverlayDictionary") == false) continue;
+            if (type.Name is not "BETAS") continue;
+            
+            // TODO: Definitely find a better way to do this. Need to recursively find types.
+            foreach (var nested in type.NestedTypes)
+            {
+                if (nested.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
+                Console.WriteLine($"{nested.FullNameNormalized()}");
+                
+                foreach (var member in nested.Methods)
+                {
+                    if (member.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
+                    Console.WriteLine($"  {nested.FullNameNormalized()}.{member.NameNormalized()}");
+                }
+            }
             
             if (type.Name is "<Module>") continue;
             if (type.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
             
-            if (!type.HasGenericParameters) continue;
+            // if (!type.HasGenericParameters) continue;
 
             // foreach (var genParam in type.GenericParameters)
             // {
@@ -39,9 +80,9 @@ class Program
             
             foreach (var member in type.Methods)
             {
-                // if (member.Name is not "CopyTo") continue;
+                // if (member.Name is not "DummyFunction") continue;
                 if (member.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
-                
+
                 Console.WriteLine($"  {type.FullNameNormalized()}.{member.NameNormalized()}");
             }
         }
@@ -65,8 +106,24 @@ public static class MemberExtensions
         {
             string parameters = string.Join(", ", method.Parameters.Select(p =>
             {
-                TypeDefinition? type = p.ParameterType.Resolve();
-                return type is null ? $"{p.ParameterType.Name} {p.Name}" : $"{type.FullNameNormalized()} {p.Name}";
+                string nullable = p.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.NullableAttribute") ? "?" : "";
+                bool dynamic = p.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.DynamicAttribute");
+                
+                if (dynamic)
+                {
+                    return $"dynamic{nullable} {p.Name}";
+                }
+                
+                try
+                {
+                    TypeDefinition? type = p.ParameterType.Resolve();
+                    return type is null ? $"{p.ParameterType.Name}{nullable} {p.Name}" : $"{type.FullNameNormalized()}{nullable} {p.Name}";
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Failed to resolve parameter type for {p.Name} in method {method.FullNameNormalized()}: {e.Message}");
+                    return $"{p.ParameterType.FullName}{nullable} {p.Name}";
+                }
             }));
 
             if (method.IsSpecialName)
@@ -91,6 +148,30 @@ public static class MemberExtensions
     
     public static string FullNameNormalized<T>(this T member) where T : IMemberDefinition, IGenericParameterProvider
     {
+        string fullName = member.FullName switch 
+        {
+            "System.Boolean" => "bool",
+            "System.Byte" => "byte",
+            "System.SByte" => "sbyte",
+            "System.Char" => "char",
+            "System.Decimal" => "decimal",
+            "System.Double" => "double",
+            "System.Single" => "float",
+            "System.Int32" => "int",
+            "System.UInt32" => "uint",
+            "System.IntPtr" => "nint",
+            "System.UIntPtr" => "nuint",
+            "System.Int64" => "long",
+            "System.UInt64" => "ulong",
+            "System.Int16" => "short",
+            "System.UInt16" => "ushort",
+            "System.String" => "string",
+            "System.Object" => "object",
+            "System.Delegate" => "delegate",
+            _ => string.Empty
+        };
+        if (!string.IsNullOrEmpty(fullName)) return fullName;
+        
         Stack<TypeDefinition> parentTypes = new Stack<TypeDefinition>();
         TypeDefinition? currentType = member.DeclaringType;
         while (currentType != null)
@@ -99,7 +180,7 @@ public static class MemberExtensions
             currentType = currentType.DeclaringType;
         }
         
-        string fullName = string.Join(".", parentTypes.Select(t => t.NameNormalized()));
+        fullName = string.Join(".", parentTypes.Select(t => t.NameNormalized()));
         if (!string.IsNullOrEmpty(fullName) && member.Name is not "set_Item" and not "get_Item") fullName += ".";
         fullName += member.NameNormalized();
 
