@@ -86,7 +86,7 @@ class Program
             foreach (var member in type.Methods)
             {
                 memberCount++;
-                // if (member.Name is not "DummyFunction") continue;
+                if (!member.Name.Contains("Dummy")) continue;
                 if (member.IsCompilerGenerated()) continue;
                 
                 // var param = member.Parameters[3];
@@ -120,6 +120,14 @@ public static class MemberExtensions
 {
     public static string ParsedGenericName<T>(this T member) where T : MemberReference, IGenericParameterProvider
     {
+        if (member is IGenericInstance { HasGenericArguments: true } generic)
+        {
+            // if (member.FullName.StartsWith("System.Nullable")) return $"{generic.GenericArguments[0].NameNormalized()}?";
+            
+            string genericArgs = string.Join(", ", generic.GenericArguments.Select(arg => arg.FullNameNormalized()));
+            return $"{member.FullName.Split('`')[0]}<{genericArgs}>";
+        }
+        
         if (!member.HasGenericParameters) return member.Name;
      
         // TODO: Eventually I wanna see how much space is saved in the final json by removing the space in the delimiter.
@@ -129,6 +137,12 @@ public static class MemberExtensions
     
     public static bool TryParseBuiltInTypeName(MemberReference member, [NotNullWhen(true)] out string? builtInType)
     {
+        if (member.FullName.StartsWith("System.Nullable") && member is GenericInstanceType { HasGenericArguments: true } generic)
+        {
+            builtInType = $"{generic.GenericArguments[0].FullNameNormalized()}"; // TODO: Re-add the "?" I removed here.
+            return true;
+        }
+        
         builtInType = member.FullName switch
         {
             "System.Boolean" => "bool",
@@ -155,7 +169,9 @@ public static class MemberExtensions
     
     public static bool IsNullable(this Mono.Cecil.ICustomAttributeProvider provider)
     {
-        return provider.HasCustomAttributes && provider.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.NullableAttribute");
+        return false; // This needs more work before I wanna start using it.
+        return provider.HasCustomAttributes && provider.CustomAttributes.Any(attr =>
+            attr.AttributeType.FullName is "System.Runtime.CompilerServices.NullableAttribute");
     }
     
     public static bool IsDynamic(this Mono.Cecil.ICustomAttributeProvider provider)
@@ -171,7 +187,7 @@ public static class MemberExtensions
     public static bool IsArray(this ParameterDefinition parameter)
     {
         // You'd think IsArray would be enough but ref array types apparently don't get IsArray = true.
-        return parameter.ParameterType.IsArray || parameter.ParameterType.Name.Contains("[]");
+        return parameter.ParameterType.IsArray || parameter.ParameterType is ByReferenceType { ElementType: ArrayType };
     }
     
     public static bool IsCompilerGenerated(this Mono.Cecil.ICustomAttributeProvider provider)
@@ -181,14 +197,6 @@ public static class MemberExtensions
 
     public static string NameNormalized(this ParameterDefinition parameter)
     {
-        string nullable = parameter.IsNullable() ? "?" : "";
-        string dynamic = parameter.IsDynamic() ? "dynamic" : "";
-        string isIn = parameter.IsIn ? "in " : "";
-        string isOut = parameter.IsOut ? "out " : "";
-        string optional = parameter.IsOptional ? $" = {parameter.Constant}" : "";
-        string arraySuffix = parameter.ParameterType.IsArray || parameter.ParameterType.Name.Contains("[]") ? "[]" : "";
-        string isRef = parameter.ParameterType.IsByReference && string.IsNullOrEmpty(isOut) && string.IsNullOrEmpty(isIn) ? "ref " : "";
-
         StringBuilder sb = new StringBuilder();
         
         if (parameter.IsByRef()) sb.Append("ref ");
@@ -203,16 +211,25 @@ public static class MemberExtensions
             try
             {
                 TypeDefinition? type = parameter.ParameterType.Resolve();
-                sb.Append(type is null ? $"{parameter.ParameterType.Name}" : $"{type.FullNameNormalized()}");
+                if (type is null) sb.Append(parameter.ParameterType.Name);
+                else switch (parameter.ParameterType)
+                {
+                    case GenericInstanceType genericInstance:
+                        sb.Append($"{genericInstance.ParsedGenericName()}");
+                        break;
+                    default:
+                        sb.Append($"{type.FullNameNormalized()}");
+                        break;
+                }
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Failed to resolve parameter type for {parameter.Name}: {e.Message}");
                 sb.Append($"{parameter.ParameterType.FullName}");
             }
-
-        if (parameter.IsNullable()) sb.Append("?");
-        if (parameter.ParameterType.IsArray) sb.Append("[]");
+        
+        if (parameter.IsArray()) sb.Append("[]");
+        if (parameter.IsNullable()) sb.Append('?');
         sb.Append($" {parameter.Name}");
         if (parameter.IsOptional) sb.Append($" = {parameter.Constant}");
         
@@ -275,29 +292,10 @@ public static class MemberExtensions
     
     public static string FullNameNormalized<T>(this T member) where T : MemberReference, IGenericParameterProvider
     {
-        string fullName = member.FullName switch 
+        if (TryParseBuiltInTypeName(member, out var normalized))
         {
-            "System.Boolean" => "bool",
-            "System.Byte" => "byte",
-            "System.SByte" => "sbyte",
-            "System.Char" => "char",
-            "System.Decimal" => "decimal",
-            "System.Double" => "double",
-            "System.Single" => "float",
-            "System.Int32" => "int",
-            "System.UInt32" => "uint",
-            "System.IntPtr" => "nint",
-            "System.UIntPtr" => "nuint",
-            "System.Int64" => "long",
-            "System.UInt64" => "ulong",
-            "System.Int16" => "short",
-            "System.UInt16" => "ushort",
-            "System.String" => "string",
-            "System.Object" => "object",
-            "System.Delegate" => "delegate",
-            _ => string.Empty
-        };
-        if (!string.IsNullOrEmpty(fullName)) return fullName;
+            return normalized;
+        }
         
         Stack<TypeReference> parentTypes = new Stack<TypeReference>();
         TypeReference? currentType = member.DeclaringType;
@@ -307,15 +305,15 @@ public static class MemberExtensions
             currentType = currentType.DeclaringType;
         }
         
-        fullName = string.Join(".", parentTypes.Select(t => t.NameNormalized()));
-        if (!string.IsNullOrEmpty(fullName) && member.Name is not "set_Item" and not "get_Item") fullName += ".";
-        fullName += member.NameNormalized();
+        normalized = string.Join(".", parentTypes.Select(t => t.NameNormalized()));
+        if (!string.IsNullOrEmpty(normalized) && member.Name is not "set_Item" and not "get_Item") normalized += ".";
+        normalized += member.NameNormalized();
 
         if (member is TypeReference type)
         {
-            fullName = type.Namespace + (string.IsNullOrEmpty(type.Namespace) ? "" : ".") + fullName;
+            normalized = type.Namespace + (string.IsNullOrEmpty(type.Namespace) ? "" : ".") + normalized;
         }
         
-        return fullName;
+        return normalized;
     }
 }
