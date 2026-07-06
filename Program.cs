@@ -1,5 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
+using System.Text;
 using Mono.Cecil;
 
 namespace StardewAssemblyNetwork;
@@ -49,9 +51,11 @@ class Program
             // Console.WriteLine($"Referenced assembly: {referencedAssembly.FullName}");
         }
 
+        int memberCount = 0;
         foreach (var type in assembly.MainModule.Types)
         {
-            // if (type.Name is not "BETAS") continue;
+            memberCount++;
+            if (!type.Name.Contains("BETAS")) continue;
             
             // TODO: Definitely find a better way to do this. Need to recursively find types.
             foreach (var nested in type.NestedTypes)
@@ -62,12 +66,12 @@ class Program
                 foreach (var member in nested.Methods)
                 {
                     if (member.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
-                    Console.WriteLine($"  {nested.FullNameNormalized()}.{member.NameNormalized()}");
+                    Console.WriteLine($"\t{nested.FullNameNormalized()}.{member.NameNormalized()}");
                 }
             }
             
             if (type.Name is "<Module>") continue;
-            if (type.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
+            if (type.IsCompilerGenerated()) continue;
             if (type.Namespace == "System.Runtime.CompilerServices") continue;
             
             // if (!type.HasGenericParameters) continue;
@@ -81,8 +85,9 @@ class Program
             
             foreach (var member in type.Methods)
             {
+                memberCount++;
                 // if (member.Name is not "DummyFunction") continue;
-                if (member.CustomAttributes.Any(attr => attr.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute")) continue;
+                if (member.IsCompilerGenerated()) continue;
                 
                 // var param = member.Parameters[3];
                 // foreach (var propInfo in param.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -102,17 +107,29 @@ class Program
                 //     }
                 // }
                 //
-                Console.WriteLine($"  {type.FullNameNormalized()}.{member.NameNormalized()}");
+                Console.WriteLine($"\t{type.FullNameNormalized()}.{member.NameNormalized()}");
+                // Console.WriteLine($"\t\t{member.FullName}");
             }
         }
+        
+        Console.WriteLine(memberCount);
     }
 }
 
 public static class MemberExtensions
 {
-    public static string NameNormalized<T>(this T member) where T : IMemberDefinition, IGenericParameterProvider
+    public static string ParsedGenericName<T>(this T member) where T : MemberReference, IGenericParameterProvider
     {
-        string normalized = member.FullName switch
+        if (!member.HasGenericParameters) return member.Name;
+     
+        // TODO: Eventually I wanna see how much space is saved in the final json by removing the space in the delimiter.
+        string genericParams = string.Join(", ", member.GenericParameters.Select(p => p.Name));
+        return $"{member.Name.Split('`')[0]}<{genericParams}>";
+    }
+    
+    public static bool TryParseBuiltInTypeName(MemberReference member, [NotNullWhen(true)] out string? builtInType)
+    {
+        builtInType = member.FullName switch
         {
             "System.Boolean" => "bool",
             "System.Byte" => "byte",
@@ -131,75 +148,132 @@ public static class MemberExtensions
             "System.UInt16" => "ushort",
             "System.String" => "string",
             "System.Object" => "object",
-            "System.Delegate" => "delegate",
-            _ => string.Empty
+            _ => null
         };
-        if (!string.IsNullOrEmpty(normalized)) return normalized;
-        normalized = member.Name;
+        return builtInType is not null;
+    }
+    
+    public static bool IsNullable(this Mono.Cecil.ICustomAttributeProvider provider)
+    {
+        return provider.HasCustomAttributes && provider.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.NullableAttribute");
+    }
+    
+    public static bool IsDynamic(this Mono.Cecil.ICustomAttributeProvider provider)
+    {
+        return provider.HasCustomAttributes && provider.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.DynamicAttribute");
+    }
+    
+    public static bool IsByRef(this ParameterDefinition parameter)
+    {
+        return parameter.ParameterType.IsByReference && parameter is { IsIn: false, IsOut: false };
+    }
 
-        if (member.HasGenericParameters)
+    public static bool IsArray(this ParameterDefinition parameter)
+    {
+        // You'd think IsArray would be enough but ref array types apparently don't get IsArray = true.
+        return parameter.ParameterType.IsArray || parameter.ParameterType.Name.Contains("[]");
+    }
+    
+    public static bool IsCompilerGenerated(this Mono.Cecil.ICustomAttributeProvider provider)
+    {
+        return provider.HasCustomAttributes && provider.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.CompilerGeneratedAttribute");
+    }
+
+    public static string NameNormalized(this ParameterDefinition parameter)
+    {
+        string nullable = parameter.IsNullable() ? "?" : "";
+        string dynamic = parameter.IsDynamic() ? "dynamic" : "";
+        string isIn = parameter.IsIn ? "in " : "";
+        string isOut = parameter.IsOut ? "out " : "";
+        string optional = parameter.IsOptional ? $" = {parameter.Constant}" : "";
+        string arraySuffix = parameter.ParameterType.IsArray || parameter.ParameterType.Name.Contains("[]") ? "[]" : "";
+        string isRef = parameter.ParameterType.IsByReference && string.IsNullOrEmpty(isOut) && string.IsNullOrEmpty(isIn) ? "ref " : "";
+
+        StringBuilder sb = new StringBuilder();
+        
+        if (parameter.IsByRef()) sb.Append("ref ");
+        if (parameter.IsIn) sb.Append("in ");
+        if (parameter.IsOut) sb.Append("out ");
+        
+        if (parameter.IsDynamic()) 
+            sb.Append("dynamic");
+        else if (TryParseBuiltInTypeName(parameter.ParameterType, out var builtInType))
+            sb.Append($"{builtInType}");
+        else
+            try
+            {
+                TypeDefinition? type = parameter.ParameterType.Resolve();
+                sb.Append(type is null ? $"{parameter.ParameterType.Name}" : $"{type.FullNameNormalized()}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to resolve parameter type for {parameter.Name}: {e.Message}");
+                sb.Append($"{parameter.ParameterType.FullName}");
+            }
+
+        if (parameter.IsNullable()) sb.Append("?");
+        if (parameter.ParameterType.IsArray) sb.Append("[]");
+        sb.Append($" {parameter.Name}");
+        if (parameter.IsOptional) sb.Append($" = {parameter.Constant}");
+        
+        return sb.ToString();
+
+        // try
+        // {
+        //     TypeDefinition? type = parameter.ParameterType.Resolve();
+        //     arraySuffix = type?.IsArray == true ? "[]" : arraySuffix;
+        //     return type is null ?
+        //         $"{isIn}{isOut}{isRef}{parameter.ParameterType.Name}{nullable}{arraySuffix} {parameter.Name}{optional}" :
+        //         $"{isIn}{isOut}{isRef}{type.FullNameNormalized()}{nullable}{arraySuffix} {parameter.Name}{optional}";
+        // }
+        // catch (Exception e)
+        // {
+        //     Console.WriteLine($"Failed to resolve parameter type for {parameter.Name}: {e.Message}");
+        //     return $"{parameter.ParameterType.FullName}{nullable}{arraySuffix} {parameter.Name}";
+        // }
+    }
+    
+    public static string NameNormalized<T>(this T member) where T : MemberReference, IGenericParameterProvider
+    {
+        if (TryParseBuiltInTypeName(member, out var normalized))
         {
-            // TODO: Eventually I wanna see how much space is saved in the final json by removing the space in the delimiter.
-            string genericParams = string.Join(", ", member.GenericParameters.Select(p => p.Name));
-            normalized = $"{member.Name.Split('`')[0]}<{genericParams}>";
+            return normalized;
         }
 
-        if (member is MethodDefinition method)
-        {
-            string parameters = string.Join(", ", method.Parameters.Select(p =>
-            {
-                string nullable = p.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.NullableAttribute") ? "?" : "";
-                
-                bool dynamic = p.CustomAttributes.Any(attr => attr.AttributeType.FullName is "System.Runtime.CompilerServices.DynamicAttribute");
-                
-                string isIn = p.IsIn ? "in " : "";
-                string isOut = p.IsOut ? "out " : "";
-                string optional = p.IsOptional ? $" = {p.Constant}" : "";
-                
-                string arraySuffix = p.ParameterType.IsArray || p.ParameterType.Name.Contains("[]") ? "[]" : "";
-                string isRef = p.ParameterType.IsByReference && string.IsNullOrEmpty(isOut) && string.IsNullOrEmpty(isIn) ? "ref " : "";
-                
-                if (dynamic)
-                {
-                    return $"dynamic{nullable} {p.Name}";
-                }
-                
-                try
-                {
-                    TypeDefinition? type = p.ParameterType.Resolve();
-                    arraySuffix = type?.IsArray == true ? "[]" : arraySuffix;
-                    return type is null ? 
-                        $"{isIn}{isOut}{isRef}{p.ParameterType.Name}{nullable}{arraySuffix} {p.Name}{optional}" : 
-                        $"{isIn}{isOut}{isRef}{type.FullNameNormalized()}{nullable}{arraySuffix} {p.Name}{optional}";
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Failed to resolve parameter type for {p.Name} in method {method.FullNameNormalized()}: {e.Message}");
-                    return $"{p.ParameterType.FullName}{nullable}{arraySuffix} {p.Name}";
-                }
-            }));
+        normalized = member.ParsedGenericName();
 
-            if (method.IsSpecialName)
+        if (member is not MethodDefinition method) return normalized;
+        
+        
+        string parameters = string.Join(", ", method.Parameters.Select(p =>
+        {
+            // if (TryParseBuiltInTypeName(p.ParameterType, out var builtInType))
+            // {
+            //     return $"{builtInType} {p.Name}";
+            // }
+            return p.NameNormalized();
+        }));
+
+        if (method.IsSpecialName)
+        {
+            if (method.IsConstructor)
             {
-                if (method.IsConstructor)
-                {
-                    normalized = $"{member.DeclaringType.NameNormalized()}({parameters})";
-                } else if (member.Name is "set_Item" or "get_Item")
-                {
-                    normalized = $"[]";
-                } else if (member.Name.StartsWith("get_"))
-                {
-                    normalized = $"{member.Name.Substring(4)} {{ get; }}";
-                } else if (member.Name.StartsWith("set_"))
-                {
-                    normalized = $"{member.Name.Substring(4)} {{ set; }}";
-                }
-            } else normalized += $"({parameters})";
-        }
+                normalized = $"{member.DeclaringType.NameNormalized()}({parameters})";
+            } else if (member.Name is "set_Item" or "get_Item")
+            {
+                normalized = $"[]";
+            } else if (member.Name.StartsWith("get_"))
+            {
+                normalized = $"{member.Name.Substring(4)} {{ get; }}";
+            } else if (member.Name.StartsWith("set_"))
+            {
+                normalized = $"{member.Name.Substring(4)} {{ set; }}";
+            }
+        } else normalized += $"({parameters})";
         return normalized;
     }
     
-    public static string FullNameNormalized<T>(this T member) where T : IMemberDefinition, IGenericParameterProvider
+    public static string FullNameNormalized<T>(this T member) where T : MemberReference, IGenericParameterProvider
     {
         string fullName = member.FullName switch 
         {
@@ -225,8 +299,8 @@ public static class MemberExtensions
         };
         if (!string.IsNullOrEmpty(fullName)) return fullName;
         
-        Stack<TypeDefinition> parentTypes = new Stack<TypeDefinition>();
-        TypeDefinition? currentType = member.DeclaringType;
+        Stack<TypeReference> parentTypes = new Stack<TypeReference>();
+        TypeReference? currentType = member.DeclaringType;
         while (currentType != null)
         {
             parentTypes.Push(currentType);
