@@ -1,5 +1,8 @@
 ﻿using Mono.Cecil;
 
+[assembly: CaptureConsole]
+[assembly: CaptureTrace]
+
 namespace StardewAssemblyNetwork.Tests;
 
 public class TestContext : IDisposable

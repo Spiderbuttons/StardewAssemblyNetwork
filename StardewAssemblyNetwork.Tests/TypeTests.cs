@@ -1,73 +1,78 @@
-﻿using StardewAssemblyNetwork.Extensions;
-
-[assembly: CaptureConsole]
-[assembly: CaptureTrace]
+﻿using Mono.Cecil;
+using StardewAssemblyNetwork.Extensions;
 
 namespace StardewAssemblyNetwork.Tests;
 
 [Collection("TestContext")]
 public class TypeTests
 {
+    private const string TEST_TYPE_NAMESPACE = "StardewAssemblyNetwork.TestAssembly";
+    
     private readonly TestContext context;
 
     public TypeTests(TestContext ctx)
     {
         context = ctx;
     }
+
+    private TypeDefinition GetType(string name)
+    {
+        return context.TestAssembly.GetType($"{TEST_TYPE_NAMESPACE}.{name}");
+    }
     
     [Fact]
     public void NormalType()
     {
-        var type = context.TestAssembly.GetType("StardewAssemblyNetwork.TestAssembly.NormalType");
+        var type = GetType("NormalType");
         Assert.Equal("NormalType", type.NormalizedName());
-        Assert.Equal("StardewAssemblyNetwork.TestAssembly.NormalType", type.NormalizedFullName());
+        Assert.Equal($"{TEST_TYPE_NAMESPACE}.NormalType", type.NormalizedFullName());
     }
 
     [Fact]
     public void SingleGenericType()
     {
-        var type = context.TestAssembly.GetType("StardewAssemblyNetwork.TestAssembly.SingleGenericType`1");
+        var type = GetType("SingleGenericType`1");
         Assert.Equal("SingleGenericType<T>", type.NormalizedName());
-        Assert.Equal("StardewAssemblyNetwork.TestAssembly.SingleGenericType<T>", type.NormalizedFullName());
+        Assert.Equal($"{TEST_TYPE_NAMESPACE}.SingleGenericType<T>", type.NormalizedFullName());
     }
 
     [Fact]
     public void DoubleGenericType()
     {
-        var type = context.TestAssembly.GetType("StardewAssemblyNetwork.TestAssembly.DoubleGenericType`2");
+        var type = GetType("DoubleGenericType`2");
         Assert.Equal("DoubleGenericType<T1, T2>", type.NormalizedName());
-        Assert.Equal("StardewAssemblyNetwork.TestAssembly.DoubleGenericType<T1, T2>", type.NormalizedFullName());
+        Assert.Equal($"{TEST_TYPE_NAMESPACE}.DoubleGenericType<T1, T2>", type.NormalizedFullName());
     }
 
     [Fact]
     public void NamedSingleGeneric()
     {
-        var type = context.TestAssembly.GetType("StardewAssemblyNetwork.TestAssembly.NamedSingleGenericType`1");
+        var type = GetType("NamedSingleGenericType`1");
         Assert.Equal("NamedSingleGenericType<SomeType>", type.NormalizedName());
-        Assert.Equal("StardewAssemblyNetwork.TestAssembly.NamedSingleGenericType<SomeType>", type.NormalizedFullName());
+        Assert.Equal($"{TEST_TYPE_NAMESPACE}.NamedSingleGenericType<SomeType>", type.NormalizedFullName());
     }
 
     [Fact]
     public void NamedDoubleGeneric()
     {
-        var type = context.TestAssembly.GetType("StardewAssemblyNetwork.TestAssembly.NamedDoubleGenericType`2");
+        var type = GetType("NamedDoubleGenericType`2");
         Assert.Equal("NamedDoubleGenericType<Type1, Type2>", type.NormalizedName());
-        Assert.Equal("StardewAssemblyNetwork.TestAssembly.NamedDoubleGenericType<Type1, Type2>", type.NormalizedFullName());
+        Assert.Equal($"{TEST_TYPE_NAMESPACE}.NamedDoubleGenericType<Type1, Type2>", type.NormalizedFullName());
     }
 
     [Fact]
     public void NestedType()
     {
-        var type = context.TestAssembly.GetType("StardewAssemblyNetwork.TestAssembly.NormalType/NestedType");
+        var type = GetType("NormalType/NestedType");
         Assert.Equal("NestedType", type.NormalizedName());
-        Assert.Equal("StardewAssemblyNetwork.TestAssembly.NormalType+NestedType", type.NormalizedFullName());
+        Assert.Equal($"{TEST_TYPE_NAMESPACE}.NormalType+NestedType", type.NormalizedFullName());
     }
 
     [Fact]
     public void DualNestedType()
     {
-        var type = context.TestAssembly.GetType("StardewAssemblyNetwork.TestAssembly.NormalType/NestedType/DualNestedType");
+        var type = GetType("NormalType/NestedType/DualNestedType");
         Assert.Equal("DualNestedType", type.NormalizedName());
-        Assert.Equal("StardewAssemblyNetwork.TestAssembly.NormalType+NestedType+DualNestedType", type.NormalizedFullName());
+        Assert.Equal($"{TEST_TYPE_NAMESPACE}.NormalType+NestedType+DualNestedType", type.NormalizedFullName());
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Mono.Cecil;
 
 namespace StardewAssemblyNetwork.Extensions;
@@ -7,9 +8,39 @@ public static class TypeDefinitionExtensions
 {
     extension(TypeDefinition type)
     {
+        public bool TryGetBuiltInName([NotNullWhen(true)] out string? builtInName)
+        { 
+            builtInName = type.FullName switch
+            {
+                "System.Boolean" => "bool",
+                "System.Byte" => "byte",
+                "System.SByte" => "sbyte",
+                "System.Char" => "char",
+                "System.Decimal" => "decimal",
+                "System.Double" => "double",
+                "System.Single" => "float",
+                "System.Int32" => "int",
+                "System.UInt32" => "uint",
+                "System.IntPtr" => "nint",
+                "System.UIntPtr" => "nuint",
+                "System.Int64" => "long",
+                "System.UInt64" => "ulong",
+                "System.Int16" => "short",
+                "System.UInt16" => "ushort",
+                "System.String" => "string",
+                "System.Object" => "object",
+                _ => null
+            };
+            return builtInName is not null;
+        }
+        
         public string NormalizedName()
         {
-            if (!type.HasGenericParameters) return type.Name;
+            type.TryGetBuiltInName(out string? builtInName);
+            if (!type.HasGenericParameters)
+            {
+                return builtInName ?? type.Name;
+            }
             
             StringBuilder sb = new StringBuilder(type.Name[..type.Name.IndexOf('`')]);
             IEnumerable<string> genericNames = type.GenericParameters.Select(p => p.Name).ToArray();
@@ -21,6 +52,11 @@ public static class TypeDefinitionExtensions
 
         public string NormalizedFullName()
         {
+            if (type.TryGetBuiltInName(out string? builtInName))
+            {
+                return builtInName;
+            }
+            
             StringBuilder sb = new StringBuilder();
             if (type.DeclaringType is null)
             {
@@ -48,6 +84,41 @@ public static class TypeDefinitionExtensions
             }
             
             return sb.ToString();
+        }
+
+        public IMemberDefinition GetMember(string name, Type memberType)
+        {
+            if (memberType == typeof(PropertyDefinition))
+            {
+                return type.GetProperty(name) ?? throw new ArgumentException($"Property '{name}' not found in type '{type.FullName}'");
+            }
+
+            if (memberType == typeof(FieldDefinition))
+            {
+                return type.GetField(name) ?? throw new ArgumentException($"Field '{name}' not found in type '{type.FullName}'");
+            }
+
+            if (memberType == typeof(MethodDefinition))
+            {
+                return type.GetMethod(name) ?? throw new ArgumentException($"Method '{name}' not found in type '{type.FullName}'");
+            }
+
+            throw new ArgumentException($"Unsupported member type: {memberType}");
+        }
+
+        public PropertyDefinition? GetProperty(string name)
+        {
+            return !type.HasProperties ? null : type.Properties.FirstOrDefault(property => property.Name == name);
+        }
+
+        public FieldDefinition? GetField(string name)
+        {
+            return !type.HasFields ? null : type.Fields.FirstOrDefault(field => field.Name == name);
+        }
+
+        public MethodDefinition? GetMethod(string name)
+        {
+            return !type.HasMethods ? null : type.Methods.FirstOrDefault(method => method.Name == name);
         }
 
         public List<TypeDefinition> GetNestedTypes()
