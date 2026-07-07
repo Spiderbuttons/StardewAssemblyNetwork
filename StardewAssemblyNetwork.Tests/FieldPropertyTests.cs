@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using FluentAssertions;
+using Mono.Cecil;
 using StardewAssemblyNetwork.Extensions;
 
 namespace StardewAssemblyNetwork.Tests;
@@ -34,73 +35,72 @@ public class FieldPropertyTests
     public void GetterSetterProperty()
     {
         var property = GetProperty("GetterSetterProperty");
-        Assert.Equal("GetterSetterProperty { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.GetterSetterProperty {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("GetterSetterProperty { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.GetterSetterProperty {{ get; set; }}");
     }
     
     [Fact]
     public void GetterSetterDefinedProperty()
     {
         var property = GetProperty("GetterSetterDefinedProperty");
-        Assert.Equal("GetterSetterDefinedProperty { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.GetterSetterDefinedProperty {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("GetterSetterDefinedProperty { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.GetterSetterDefinedProperty {{ get; set; }}");
     }
     
     [Fact]
     public void GetterOnlyProperty()
     {
         var property = GetProperty("GetterOnlyProperty");
-        Assert.Equal("GetterOnlyProperty { get; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.GetterOnlyProperty {{ get; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("GetterOnlyProperty { get; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.GetterOnlyProperty {{ get; }}");
     }
     
     [Fact]
     public void SetterOnlyProperty()
     {
         var property = GetProperty("SetterOnlyProperty");
-        Assert.Equal("SetterOnlyProperty { set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.SetterOnlyProperty {{ set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("SetterOnlyProperty { set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.SetterOnlyProperty {{ set; }}");
     }
     
     [Fact]
     public void AutoProperty()
     {
         var property = GetProperty("AutoProperty");
-        Assert.Equal("AutoProperty { get; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.AutoProperty {{ get; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("AutoProperty { get; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.AutoProperty {{ get; }}");
     }
-    
     
     [Fact]
     public void get_Property()
     {
         var property = GetProperty("get_Property");
-        Assert.Equal("get_Property { get; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.get_Property {{ get; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("get_Property { get; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.get_Property {{ get; }}");
     }
     
     [Fact]
     public void set_Property()
     {
         var property = GetProperty("set_Property");
-        Assert.Equal("set_Property { get; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.set_Property {{ get; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("set_Property { get; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.set_Property {{ get; }}");
     }
     
     [Fact]
     public void get_Item()
     {
         var property = GetProperty("get_Item");
-        Assert.Equal("get_Item { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.get_Item {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("get_Item { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.get_Item {{ get; set; }}");
     }
     
     [Fact]
     public void set_Item()
     {
         var property = GetProperty("set_Item");
-        Assert.Equal("set_Item { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.set_Item {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("set_Item { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.set_Item {{ get; set; }}");
     }
     
     [Fact]
@@ -108,88 +108,88 @@ public class FieldPropertyTests
     {
         var type = TestType.GetType("NestedProperty", false) ?? throw new ArgumentException($"Nested type 'NestedProperty' not found in type '{TestType.FullName}'");
         var property = type.GetProperty("NestedPropertyValue") ?? throw new ArgumentException($"Property 'NestedPropertyValue' not found in type '{type.FullName}'");
-        Assert.Equal("NestedPropertyValue { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}+NestedProperty.NestedPropertyValue {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("NestedPropertyValue { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}+NestedProperty.NestedPropertyValue {{ get; set; }}");
     }
     
     [Fact]
     public void SingleGenericProperty()
     {
         var property = GetProperty("SingleGenericProperty");
-        Assert.Equal("SingleGenericProperty { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.SingleGenericProperty {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("SingleGenericProperty { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.SingleGenericProperty {{ get; set; }}");
     }
     
     [Fact]
     public void DoubleGenericProperty()
     {
         var property = GetProperty("DoubleGenericProperty");
-        Assert.Equal("DoubleGenericProperty { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.DoubleGenericProperty {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("DoubleGenericProperty { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.DoubleGenericProperty {{ get; set; }}");
     }
     
     [Fact]
     public void NullableValueTypeProperty()
     {
         var property = GetProperty("NullableValueTypeProperty");
-        Assert.Equal("NullableValueTypeProperty { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.NullableValueTypeProperty {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("NullableValueTypeProperty { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.NullableValueTypeProperty {{ get; set; }}");
     }
     
     [Fact]
     public void NullableReferenceTypeProperty()
     {
         var property = GetProperty("NullableReferenceTypeProperty");
-        Assert.Equal("NullableReferenceTypeProperty { get; set; }", property.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.NullableReferenceTypeProperty {{ get; set; }}", property.NormalizedFullName());
+        property.NormalizedName().Should().Be("NullableReferenceTypeProperty { get; set; }");
+        property.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.NullableReferenceTypeProperty {{ get; set; }}");
     }
     
     [Fact]
     public void valueField()
     {
         var field = GetField("valueField");
-        Assert.Equal("valueField", field.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.valueField", field.NormalizedFullName());
+        field.NormalizedName().Should().Be("valueField");
+        field.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.valueField");
     }
     
     [Fact]
     public void referenceField()
     {
         var field = GetField("referenceField");
-        Assert.Equal("referenceField", field.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.referenceField", field.NormalizedFullName());
+        field.NormalizedName().Should().Be("referenceField");
+        field.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.referenceField");
     }
     
     [Fact]
     public void singleGenericField()
     {
         var field = GetField("singleGenericField");
-        Assert.Equal("singleGenericField", field.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.singleGenericField", field.NormalizedFullName());
+        field.NormalizedName().Should().Be("singleGenericField");
+        field.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.singleGenericField");
     }
     
     [Fact]
     public void doubleGenericField()
     {
         var field = GetField("doubleGenericField");
-        Assert.Equal("doubleGenericField", field.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.doubleGenericField", field.NormalizedFullName());
+        field.NormalizedName().Should().Be("doubleGenericField");
+        field.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.doubleGenericField");
     }
     
     [Fact]
     public void nullableValueTypeField()
     {
         var field = GetField("nullableValueTypeField");
-        Assert.Equal("nullableValueTypeField", field.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.nullableValueTypeField", field.NormalizedFullName());
+        field.NormalizedName().Should().Be("nullableValueTypeField");
+        field.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.nullableValueTypeField");
     }
     
     [Fact]
     public void nullableReferenceTypeField()
     {
         var field = GetField("nullableReferenceTypeField");
-        Assert.Equal("nullableReferenceTypeField", field.NormalizedName());
-        Assert.Equal($"{FULL_CLASS_NAME}.nullableReferenceTypeField", field.NormalizedFullName());
+        field.NormalizedName().Should().Be("nullableReferenceTypeField");
+        field.NormalizedFullName().Should().Be($"{FULL_CLASS_NAME}.nullableReferenceTypeField");
     }
     
     [Fact]
@@ -197,7 +197,8 @@ public class FieldPropertyTests
     {
         var type = context.TestAssembly.GetType($"{TEST_TYPE_NAMESPACE}.IndexerTests");
         var property = type.GetProperty("Item") ?? throw new ArgumentException($"Property 'get_Item' not found in type '{type.FullName}'");
-        Assert.Equal("Indexer[int index]", property.NormalizedName());
-        Assert.Equal($"{TEST_TYPE_NAMESPACE}.IndexerTests::Indexer[int index]", property.NormalizedFullName());
+        property.IsIndexer().Should().BeTrue();
+        property.NormalizedName().Should().Be("Indexer[int index]");
+        property.NormalizedFullName().Should().Be($"{TEST_TYPE_NAMESPACE}.IndexerTests::Indexer[int index]");
     }
 }
