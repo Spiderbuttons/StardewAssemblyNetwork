@@ -1,11 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
+        <OutputType>Library</OutputType>
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>latestmajor</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
+    
+    <Target Name="CopyDll" AfterTargets="Build">
+        <Copy SourceFiles="$(OutputPath)StardewAssemblyNetwork.TestAssembly.dll" DestinationFolder="$(ProjectDir)..\StardewAssemblyNetwork\bin\$(Configuration)\net10.0" />
+        <Copy SourceFiles="$(OutputPath)StardewAssemblyNetwork.TestAssembly.dll" DestinationFolder="$(ProjectDir)..\StardewAssemblyNetwork.Tests\bin\$(Configuration)\net10.0" />
+    </Target>
 
 </Project>
