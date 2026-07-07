@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="StardewAssemblyNetwork.TestAssembly/StardewAssemblyNetwork.TestAssembly.csproj" />
+  <Project Path="StardewAssemblyNetwork.Tests/StardewAssemblyNetwork.Tests.csproj" />
   <Project Path="StardewAssemblyNetwork/StardewAssemblyNetwork.csproj" />
 </Solution>

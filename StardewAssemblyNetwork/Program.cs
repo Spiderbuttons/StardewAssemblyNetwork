@@ -114,6 +114,11 @@ class Program
         
         Console.WriteLine(memberCount);
     }
+
+    public static string TestFuntion()
+    {
+        return "Hi";
+    }
 }
 
 public static class MemberExtensions
