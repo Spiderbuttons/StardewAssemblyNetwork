@@ -52,25 +52,27 @@ public static class ParameterDefinitionExtensions
                 else
                 {
                     List<string> args = [];
-                    bool wasGenericInstance = false;
                     foreach (var arg in generic.GenericArguments)
                     {
-                        foreach (var genericArg in (arg as GenericInstanceType)?.GenericArguments ?? [])
+                        if (arg is GenericInstanceType gType)
                         {
-                            wasGenericInstance = true;
-                            var resolvedArg = genericArg.Resolve();
-                            StringBuilder name = new StringBuilder(resolvedArg.NormalizedFullName());
-                            if (resolvedArg.IsNullable(out var argNullability))
+                            foreach (var genericArg in gType.GenericArguments)
                             {
-                                name.Append('?');
+                                var resolvedArg = genericArg.Resolve();
+                                StringBuilder name = new StringBuilder(resolvedArg.NormalizedFullName());
+                                if (resolvedArg.IsNullable(out var argNullability))
+                                {
+                                    name.Append('?');
+                                }
+                                args.Add(name.ToString());
                             }
+                        }
+                        else
+                        {
+                            StringBuilder name = new StringBuilder(arg.Resolve().NormalizedFullName());
+                            // if (isNullableByContext && nullability is [2]) name2.Append('?');
                             args.Add(name.ToString());
                         }
-
-                        if (wasGenericInstance) break;
-                        StringBuilder name2 = new StringBuilder(arg.Resolve().NormalizedFullName());
-                        // if (isNullableByContext && nullability is [2]) name2.Append('?');
-                        args.Add(name2.ToString());
                     }
 
                     if (param.IsNullableByType())
