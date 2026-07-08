@@ -33,7 +33,8 @@ public static class CustomAttributeProviderExtensions
         public bool IsNullable(out List<byte>? nullability, ICustomAttributeProvider? parentContext = null)
         {
             nullability = null;
-            return provider.IsNullableByType() || provider.IsNullableByAttribute(out nullability) || provider.IsNullableByContext(parentContext, out nullability);
+            return provider.IsNullableByAttribute(out nullability) ||
+                   provider.IsNullableByContext(parentContext, out nullability) || provider.IsNullableByType();
         }
 
         public bool IsNullableByType()
