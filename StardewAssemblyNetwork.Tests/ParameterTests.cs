@@ -38,7 +38,7 @@ public class ParameterTests
     public void OneParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -49,7 +49,7 @@ public class ParameterTests
     public void TwoParameters()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(2).And
@@ -159,16 +159,186 @@ public class ParameterTests
     public void DynamicParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var firstParam = method.GetParameters()[0];
-        foreach (var attr in firstParam.CustomAttributes)
-        {
-            Console.WriteLine(attr.AttributeType.Name);
-        }
-        
         var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
             .Contain("dynamic index");
+    }
+    
+    [Fact]
+    public void NullableValueTypeParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("int? index");
+    }
+    
+    [Fact]
+    public void NullableReferenceTypeParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.ParameterTests? parameter");
+    }
+    
+    [Fact]
+    public void NullableStructTypeParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.ParameterTests+StructType? parameter");
+    }
+    
+    [Fact]
+    public void AllNullableParameters()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(3).And
+            .Contain(["int? index1", "int? index2", "int? index3"]);
+    }
+    
+    [Fact]
+    public void MostlyNullableParameters()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(3).And
+            .Contain(["int? index1", "int? index2", "int index3"]);
+    }
+    
+    [Fact]
+    public void MostlyNonNullableParameters()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(3).And
+            .Contain(["int? index1", "int index2", "int index3"]);
+    }
+    
+    [Fact]
+    public void ValueTypeArrayParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("int[] indexes");
+    }
+    
+    [Fact]
+    public void ReferenceTypeArrayParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("string[] strings");
+    }
+    
+    [Fact]
+    public void NullableArrayParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("string[]? strings");
+    }
+    
+    [Fact]
+    public void NullableNullableArrayParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("string?[]? strings");
+    }
+    
+    [Fact]
+    public void SingleGenericParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericType<int> singleGeneric");
+    }
+    
+    [Fact]
+    public void DoubleGenericParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.DoubleGenericType<int, string> doubleGeneric");
+    }
+    
+    [Fact]
+    public void NullableGenericParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericType<int>? singleGeneric");
+    }
+    
+    [Fact]
+    public void SingleGenericNullableParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericType<int?> singleGeneric");
+    }
+    
+    [Fact]
+    public void DoubleGenericNullableParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.DoubleGenericType<int?, string?> doubleGeneric");
+    }
+    
+    [Fact]
+    public void NullableGenericNullableParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericType<int?>? singleGeneric");
     }
 }

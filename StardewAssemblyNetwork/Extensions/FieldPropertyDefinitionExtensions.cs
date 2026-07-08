@@ -11,7 +11,7 @@ public static class FieldPropertyDefinitionExtensions
         {
             if (prop.IsIndexer())
             {
-                return $"Indexer[{string.Join(", ", prop.Parameters.Select(p => p.NormalizedName()))}]";
+                return $"Indexer[{string.Join(", ", prop.Parameters.Select(p => p.NormalizedFullName()))}]";
             }
             
             StringBuilder sb = new StringBuilder(prop.Name);
@@ -26,7 +26,7 @@ public static class FieldPropertyDefinitionExtensions
         {
             if (prop.IsIndexer())
             {
-                return $"{prop.DeclaringType?.NormalizedFullName()}::Indexer[{string.Join(", ", prop.Parameters.Select(p => p.NormalizedName()))}]";
+                return $"{prop.DeclaringType?.NormalizedFullName()}::Indexer[{string.Join(", ", prop.Parameters.Select(p => p.NormalizedFullName()))}]";
             }
             
             return $"{prop.DeclaringType?.NormalizedFullName()}.{prop.NormalizedName()}";

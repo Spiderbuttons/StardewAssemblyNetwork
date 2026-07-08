@@ -32,7 +32,18 @@ public static class TypeDefinitionExtensions
                 "System.Object" when !type.IsDynamic() => "object",
                 _ => null
             };
-            return builtInName is not null;
+            if (builtInName is not null) return true;
+
+            if (!type.FullName.StartsWith("System.Nullable")) return false;
+            if (!type.HasGenericParameters || type.GenericParameters.Count != 1) return false;
+            
+            builtInName = $"{type.GenericParameters[0].Name}?";
+            return true;
+        }
+
+        public string NameWithoutGenerics()
+        {
+            return !type.HasGenericParameters ? type.Name : type.Name[..type.Name.IndexOf('`')];
         }
         
         public string NormalizedName()
@@ -43,7 +54,7 @@ public static class TypeDefinitionExtensions
                 return builtInName ?? type.Name;
             }
             
-            StringBuilder sb = new StringBuilder(type.Name[..type.Name.IndexOf('`')]);
+            StringBuilder sb = new StringBuilder(type.NameWithoutGenerics());
             IEnumerable<string> genericNames = type.GenericParameters.Select(p => p.Name).ToArray();
             sb.Append('<');
             sb.Append(string.Join(", ", genericNames));

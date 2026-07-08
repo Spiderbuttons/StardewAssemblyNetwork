@@ -7,14 +7,7 @@ public static class ParameterDefinitionExtensions
 {
     extension(ParameterDefinition param)
     {
-        public string NormalizedName()
-        {
-            string normalized = param.ParameterType.Resolve().NormalizedFullName();
-            if (normalized is "object" && param.IsDynamic()) normalized = "dynamic";
-            return $"{normalized} {param.Name}";
-        }
-        
-        public string NormalizedFullName()
+        public string NormalizedFullName(MethodDefinition? method = null)
         {
             StringBuilder sb = new StringBuilder();
             
@@ -23,7 +16,33 @@ public static class ParameterDefinitionExtensions
             if (param.IsByReference()) sb.Append("ref ");
             if (param.IsReadOnly()) sb.Append("readonly ");
 
-            sb.Append(param.NormalizedName());
+            string typeName;
+            if (param.ParameterType is GenericInstanceType { HasGenericArguments: true } generic)
+            {
+                var args = generic.GenericArguments.Select(arg => arg.Resolve().NormalizedFullName());
+                if (param.IsNullableByType())
+                {
+                    typeName = $"{string.Join(", ", args)}";
+                }
+                else if (generic.DeclaringType is not null)
+                {
+                    typeName = $"{generic.DeclaringType.Resolve().NormalizedFullName()}<{string.Join(", ", args)}>";
+                }
+                else
+                {
+                    typeName = $"{generic.Namespace}.{generic.Resolve().NameWithoutGenerics()}<{string.Join(", ", args)}>";
+                }
+            }
+            else typeName = param.ParameterType.Resolve().NormalizedFullName();
+            if (param.IsDynamic() && typeName == "object") typeName = "dynamic";
+            sb.Append(typeName);
+
+            if (param.ParameterType is ArrayType) sb.Append("[]");
+
+            if (param.IsNullable(method)) sb.Append('?');
+
+            sb.Append(' ');
+            sb.Append(param.Name);
 
             if (param is { IsOptional: true, HasConstant: true }) sb.Append($" = {param.Constant}");
             
@@ -38,6 +57,16 @@ public static class ParameterDefinitionExtensions
         public bool IsReadOnly()
         {
             return param.HasAttribute("RequiresLocationAttribute");
+        }
+
+        public bool IsNullable(MethodDefinition? method = null)
+        {
+            if (param.ParameterType is not ArrayType array)
+            {
+                return (param as ICustomAttributeProvider).IsNullable(method);
+            }
+
+            return array.ElementType.Resolve().IsNullable(method);
         }
     }
 }
