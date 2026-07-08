@@ -49,11 +49,19 @@ public class ParameterTests
     
     public void ValueTypeArrayParameter(int[] indexes) {}
     
-    public void ReferenceTypeArrayParameter(string[] strings) {}
+    public void BuiltInReferenceTypeArrayParameter(string[] strings) {}
+    
+    public void ReferenceTypeArrayParameter(ParameterTests[] strings) {}
+    
+    public void StructTypeArrayParameter(StructType[] structs) {}
     
     public void NullableArrayParameter(string[]? strings) {}
     
     public void NullableNullableArrayParameter(string?[]? strings) {}
+    
+    public void NullableStructTypeArrayParameter(StructType[]? structs) {}
+    
+    public void NullableStructTypeNullableArrayParameter(StructType?[]? structs) {}
     
     public void SingleGenericParameter(SingleGenericType<int> singleGeneric) {}
     

@@ -7,7 +7,7 @@ public static class ParameterDefinitionExtensions
 {
     extension(ParameterDefinition param)
     {
-        public string NormalizedFullName(MethodDefinition? method = null)
+        public string NormalizedFullName(ICustomAttributeProvider method)
         {
             StringBuilder sb = new StringBuilder();
             
@@ -17,29 +17,79 @@ public static class ParameterDefinitionExtensions
             if (param.IsReadOnly()) sb.Append("readonly ");
 
             string typeName;
-            if (param.ParameterType is GenericInstanceType { HasGenericArguments: true } generic)
+            // if (param.IsNullableByType())
+            // {
+            //     if (param.ParameterType is GenericInstanceType { HasGenericArguments: true } generic)
+            //     {
+            //         var args = generic.GenericArguments.Select(arg => arg.Resolve().NormalizedFullName());
+            //         typeName = $"{string.Join(", ", args)}";
+            //     } else if (param.ParameterType is ArrayType array)
+            //     {
+            //         var args = array.ElementType.GenericParameters.Select(arg => arg.Resolve().NormalizedFullName());
+            //         typeName = $"{string.Join(", ", args)}";
+            //     }
+            //     else typeName = param.ParameterType.Resolve().NormalizedFullName();
+            // }
+            // else 
+            if (param.ParameterType is GenericInstanceType or ArrayType { ElementType: GenericInstanceType })
             {
-                var args = generic.GenericArguments.Select(arg => arg.Resolve().NormalizedFullName());
-                if (param.IsNullableByType())
+                GenericInstanceType generic = param switch 
                 {
-                    typeName = $"{string.Join(", ", args)}";
-                }
-                else if (generic.DeclaringType is not null)
+                    { ParameterType: GenericInstanceType g } => g,
+                    { ParameterType: ArrayType { ElementType: GenericInstanceType g } } => g,
+                    _ => throw new InvalidOperationException("Parameter type is not a generic instance or array of generic instance.")
+                };
+                
+                if (!generic.HasGenericArguments)
                 {
-                    typeName = $"{generic.DeclaringType.Resolve().NormalizedFullName()}<{string.Join(", ", args)}>";
+                    typeName = generic.Resolve().NormalizedFullName();
                 }
                 else
                 {
-                    typeName = $"{generic.Namespace}.{generic.Resolve().NameWithoutGenerics()}<{string.Join(", ", args)}>";
+
+                    var args = generic.GenericArguments.Select(arg => arg.Resolve().NormalizedFullName());
+                    // if (param.IsNullableByType())
+                    // {
+                    //     typeName = $"{string.Join(", ", args)}";
+                    // }
+                    if (generic.DeclaringType is not null)
+                    {
+                        typeName = $"{generic.DeclaringType.Resolve().NormalizedFullName()}<{string.Join(", ", args)}>";
+                    }
+                    else
+                    {
+                        typeName = $"{generic.Namespace}.{generic.Resolve().NameWithoutGenerics()}<{string.Join(", ", args)}>";
+                    }
                 }
             }
             else typeName = param.ParameterType.Resolve().NormalizedFullName();
             if (param.IsDynamic() && typeName == "object") typeName = "dynamic";
-            sb.Append(typeName);
 
-            if (param.ParameterType is ArrayType) sb.Append("[]");
-
-            if (param.IsNullable(method)) sb.Append('?');
+            if (param.IsNullable(out var nullability, method))
+            {
+                sb.Append(typeName);
+                if (param.ParameterType is ArrayType array)
+                {
+                    var res = param.ParameterType;
+                    if (nullability?.Count == 1)
+                    {
+                        if (!array.ElementType.IsValueType) sb.Append('?');
+                        sb.Append("[]?");
+                    }
+                    else
+                    {
+                        if (nullability?.ElementAtOrDefault(1) is 2) sb.Append('?');
+                        sb.Append("[]");
+                        if (nullability?.ElementAtOrDefault(0) is 2) sb.Append('?');
+                    }
+                }
+                else sb.Append('?');
+            }
+            else
+            {
+                sb.Append(typeName);
+                if (param.ParameterType is ArrayType) sb.Append("[]");
+            }
 
             sb.Append(' ');
             sb.Append(param.Name);
@@ -59,14 +109,17 @@ public static class ParameterDefinitionExtensions
             return param.HasAttribute("RequiresLocationAttribute");
         }
 
-        public bool IsNullable(MethodDefinition? method = null)
-        {
-            if (param.ParameterType is not ArrayType array)
-            {
-                return (param as ICustomAttributeProvider).IsNullable(method);
-            }
-
-            return array.ElementType.Resolve().IsNullable(method);
-        }
+        // public bool IsNullable(ICustomAttributeProvider method)
+        // {
+        //     return (param as ICustomAttributeProvider).IsNullable(method);
+        //     
+        //     if (param.ParameterType is not ArrayType array)
+        //     {
+        //         return (param as ICustomAttributeProvider).IsNullable(method);
+        //     }
+        //
+        //     var resolved = array.Resolve();
+        //     return resolved.IsNullable(method);
+        // }
     }
 }

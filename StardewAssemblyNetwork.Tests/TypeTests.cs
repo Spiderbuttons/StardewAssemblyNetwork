@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using FluentAssertions;
+using Mono.Cecil;
 using StardewAssemblyNetwork.Extensions;
 
 namespace StardewAssemblyNetwork.Tests;
@@ -74,5 +75,21 @@ public class TypeTests
         var type = GetType("NormalType/NestedType/DualNestedType");
         Assert.Equal("DualNestedType", type.NormalizedName());
         Assert.Equal($"{TEST_TYPE_NAMESPACE}.NormalType+NestedType+DualNestedType", type.NormalizedFullName());
+    }
+    
+    [Fact]
+    public void SingleGenericStruct()
+    {
+        var type = GetType("SingleGenericStruct`1");
+        type.NormalizedName().Should().Be("SingleGenericStruct<T>");
+        type.NormalizedFullName().Should().Be($"{TEST_TYPE_NAMESPACE}.SingleGenericStruct<T>");
+    }
+    
+    [Fact]
+    public void DoubleGenericStruct()
+    {
+        var type = GetType("DoubleGenericStruct`2");
+        type.NormalizedName().Should().Be("DoubleGenericStruct<T1, T2>");
+        type.NormalizedFullName().Should().Be($"{TEST_TYPE_NAMESPACE}.DoubleGenericStruct<T1, T2>");
     }
 }

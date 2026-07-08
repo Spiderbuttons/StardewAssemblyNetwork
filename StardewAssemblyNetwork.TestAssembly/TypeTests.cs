@@ -15,3 +15,7 @@ public class DoubleGenericType<T1, T2>;
 public class NamedSingleGenericType<SomeType>;
 
 public class NamedDoubleGenericType<Type1, Type2>;
+
+public struct SingleGenericStruct<T>;
+
+public struct DoubleGenericStruct<T1, T2>;

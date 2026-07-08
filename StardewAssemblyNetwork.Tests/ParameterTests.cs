@@ -38,7 +38,7 @@ public class ParameterTests
     public void OneParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -49,7 +49,7 @@ public class ParameterTests
     public void TwoParameters()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(2).And
@@ -60,7 +60,7 @@ public class ParameterTests
     public void ReferenceParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -71,7 +71,7 @@ public class ParameterTests
     public void StructParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -82,7 +82,7 @@ public class ParameterTests
     public void InParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -93,7 +93,7 @@ public class ParameterTests
     public void OutParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -104,7 +104,7 @@ public class ParameterTests
     public void RefParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -115,7 +115,7 @@ public class ParameterTests
     public void InOutParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -126,7 +126,7 @@ public class ParameterTests
     public void RefReadonlyParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -137,7 +137,7 @@ public class ParameterTests
     public void OptionalParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -148,7 +148,7 @@ public class ParameterTests
     public void ObjectParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -159,7 +159,7 @@ public class ParameterTests
     public void DynamicParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -170,7 +170,7 @@ public class ParameterTests
     public void NullableValueTypeParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -192,7 +192,7 @@ public class ParameterTests
     public void NullableStructTypeParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -203,7 +203,7 @@ public class ParameterTests
     public void AllNullableParameters()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(3).And
@@ -214,7 +214,7 @@ public class ParameterTests
     public void MostlyNullableParameters()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(3).And
@@ -225,7 +225,7 @@ public class ParameterTests
     public void MostlyNonNullableParameters()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(3).And
@@ -236,7 +236,7 @@ public class ParameterTests
     public void ValueTypeArrayParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -244,10 +244,10 @@ public class ParameterTests
     }
     
     [Fact]
-    public void ReferenceTypeArrayParameter()
+    public void BuiltInReferenceTypeArrayParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -255,10 +255,32 @@ public class ParameterTests
     }
     
     [Fact]
+    public void ReferenceTypeArrayParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.ParameterTests[] strings");
+    }
+    
+    [Fact]
+    public void StructTypeArrayParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.ParameterTests+StructType[] structs");
+    }
+    
+    [Fact]
     public void NullableArrayParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -269,7 +291,7 @@ public class ParameterTests
     public void NullableNullableArrayParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -277,10 +299,32 @@ public class ParameterTests
     }
     
     [Fact]
+    public void NullableStructTypeArrayParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.ParameterTests+StructType[]? structs");
+    }
+    
+    [Fact]
+    public void NullableStructTypeNullableArrayParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.ParameterTests+StructType?[]? structs");
+    }
+    
+    [Fact]
     public void SingleGenericParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -291,7 +335,7 @@ public class ParameterTests
     public void DoubleGenericParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -302,7 +346,7 @@ public class ParameterTests
     public void NullableGenericParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -313,7 +357,7 @@ public class ParameterTests
     public void SingleGenericNullableParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -324,7 +368,7 @@ public class ParameterTests
     public void DoubleGenericNullableParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
@@ -335,7 +379,7 @@ public class ParameterTests
     public void NullableGenericNullableParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
-        var parameters = method.GetParameters().Select(x => x.NormalizedFullName()).ToList();
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And

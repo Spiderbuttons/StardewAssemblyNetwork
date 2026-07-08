@@ -32,7 +32,7 @@ public static class TypeDefinitionExtensions
                 "System.Object" when !type.IsDynamic() => "object",
                 _ => null
             };
-            if (builtInName is not null) return true;
+            return builtInName is not null;
 
             if (!type.FullName.StartsWith("System.Nullable")) return false;
             if (!type.HasGenericParameters || type.GenericParameters.Count != 1) return false;
