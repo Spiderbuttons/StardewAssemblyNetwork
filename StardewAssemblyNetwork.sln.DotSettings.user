@@ -1,7 +1,16 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/dotCover/Editor/HighlightingSourceSnapshotLocation/@EntryValue">C:\Users\Zuzu\AppData\Local\JetBrains\Rider2025.3\resharper-host\temp\Rider\vAny\CoverageData\_StardewAssemblyNetwork.-1267136853\Snapshot\snapshot.utdcvr</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7bcd5f61_002D5ca6_002D4d72_002D8298_002Da35bdb5f4766/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from &amp;lt;StardewAssemblyNetwork.Test&amp;gt;" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.TypeTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.FieldPropertyTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.ParameterTests.NoParameters&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.ParameterTests.OneParameter&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.ParameterTests.TwoParameters&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.ParameterTests.ReferenceParameter&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.ParameterTests.StructParameter&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.ParameterTests.InParameter&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.ParameterTests.OutParameter&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::69381085-4ADE-E9CD-3656-CF9E8F1F2209::net10.0::StardewAssemblyNetwork.Tests.ParameterTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

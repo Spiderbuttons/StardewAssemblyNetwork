@@ -9,9 +9,9 @@ public class FieldPropertyTests
 {
     private const string TEST_TYPE_NAMESPACE = "StardewAssemblyNetwork.TestAssembly";
     private const string TEST_CLASS = "FieldPropertyTests";
-    private string FULL_CLASS_NAME => $"{TEST_TYPE_NAMESPACE}.{TEST_CLASS}";
+    private const string FULL_CLASS_NAME = $"{TEST_TYPE_NAMESPACE}.{TEST_CLASS}";
 
-    private TypeDefinition TestType;
+    private readonly TypeDefinition TestType;
     
     private readonly TestContext context;
 

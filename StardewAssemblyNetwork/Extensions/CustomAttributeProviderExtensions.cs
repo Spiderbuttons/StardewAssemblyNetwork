@@ -23,5 +23,10 @@ public static class CustomAttributeProviderExtensions
             attribute = null;
             return false;
         }
+
+        public bool IsDynamic()
+        {
+            return provider.TryGetAttribute("DynamicAttribute", out _);
+        }
     }
 }

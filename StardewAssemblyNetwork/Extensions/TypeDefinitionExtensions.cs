@@ -28,7 +28,8 @@ public static class TypeDefinitionExtensions
                 "System.Int16" => "short",
                 "System.UInt16" => "ushort",
                 "System.String" => "string",
-                "System.Object" => "object",
+                "System.Object" when type.IsDynamic() => "dynamic",
+                "System.Object" when !type.IsDynamic() => "object",
                 _ => null
             };
             return builtInName is not null;
