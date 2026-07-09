@@ -33,8 +33,11 @@ public static class CustomAttributeProviderExtensions
         public bool IsNullable(out List<byte>? nullability, ICustomAttributeProvider? parentContext = null)
         {
             nullability = null;
-            return provider.IsNullableByAttribute(out nullability) ||
-                   provider.IsNullableByContext(parentContext, out nullability) || provider.IsNullableByType();
+            bool isNullableByType = provider.IsNullableByType();
+            bool isNullableByAttribute = provider.IsNullableByAttribute(out var attributeNullability);
+            bool isNullableByContext = provider.IsNullableByContext(parentContext, out var contextNullability);
+            nullability = attributeNullability ?? contextNullability;
+            return isNullableByType || isNullableByAttribute || isNullableByContext;
         }
 
         public bool IsNullableByType()
@@ -80,6 +83,30 @@ public static class CustomAttributeProviderExtensions
                 return foundTrue;
             }
 
+            if (type.IsGenericInstance && val is CustomAttributeArgument[] bytes2)
+            {
+                bool foundTrue = false;
+                foreach (var byteArg in bytes2)
+                {
+                    if (byteArg.Value is byte b)
+                    {
+                        nullability ??= [];
+                        nullability.Add(b);
+                        if (b == 2) foundTrue = true;
+                    }
+                }
+                return foundTrue;
+            }
+
+            // if (type.IsGenericInstance && val is CustomAttributeArgument[] bytes2)
+            // {
+            //     bool foundTrue = false;
+            //     for (int i = 0; i < bytes2.Length; i++)
+            //     {
+            //         if (bytes2[i].Value is byte and 2) foundTrue = true;
+            //     }
+            // }
+
             fallback:
             return attr.ConstructorArguments[0].Value switch
             {
@@ -101,7 +128,7 @@ public static class CustomAttributeProviderExtensions
             return true;
         }
         
-        public bool IsNullableByContext(ICustomAttributeProvider? parentContext, out List<byte>? nullability)
+        public bool IsNullableByContext(ICustomAttributeProvider? parentContext, [NotNullWhen(true)] out List<byte>? nullability)
         {
             nullability = null;
             if (provider.IsNullableByContext(out var contextNullability)) 

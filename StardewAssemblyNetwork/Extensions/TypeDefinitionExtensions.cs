@@ -6,7 +6,7 @@ namespace StardewAssemblyNetwork.Extensions;
 
 public static class TypeDefinitionExtensions
 {
-    extension(TypeDefinition type)
+    extension(TypeReference type)
     {
         public bool TryGetBuiltInName([NotNullWhen(true)] out string? builtInName)
         { 
@@ -28,8 +28,8 @@ public static class TypeDefinitionExtensions
                 "System.Int16" => "short",
                 "System.UInt16" => "ushort",
                 "System.String" => "string",
-                "System.Object" when type.IsDynamic() => "dynamic",
-                "System.Object" when !type.IsDynamic() => "object",
+                "System.Object" when type.Resolve().IsDynamic() => "dynamic",
+                "System.Object" when !type.Resolve().IsDynamic() => "object",
                 _ => null
             };
             return builtInName is not null;
@@ -43,23 +43,55 @@ public static class TypeDefinitionExtensions
 
         public string NameWithoutGenerics()
         {
-            return !type.HasGenericParameters ? type.Name : type.Name[..type.Name.IndexOf('`')];
+            return type.Name[..type.Name.IndexOf('`')];
         }
         
         public string NormalizedName()
         {
-            type.TryGetBuiltInName(out string? builtInName);
-            if (!type.HasGenericParameters)
-            {
-                return builtInName ?? type.Name;
-            }
+            if (type.TryGetBuiltInName(out string? builtInName)) return builtInName;
+
+            if (type is not IGenericInstance && !type.HasGenericParameters) return type.Name;
             
             StringBuilder sb = new StringBuilder(type.NameWithoutGenerics());
-            IEnumerable<string> genericNames = type.GenericParameters.Select(p => p.Name).ToArray();
+            List<string> argNames = [];
+            // IEnumerable<string> genericNames = type switch
+            // {
+            //     IGenericInstance { HasGenericArguments: true } genericInstance => genericInstance.GenericArguments.Select(arg => arg.NormalizedName()),
+            //     { HasGenericParameters: true } => type.GenericParameters.Select(p => p.Name),
+            //     _ => []
+            // };
+            if (type is GenericInstanceType generic)
+            {
+                bool isNullable = generic.Resolve().IsNullable(out var nullability);
+                for (var i = 0; i < generic.GenericArguments.Count; i++)
+                {
+                    var arg = generic.GenericArguments[i];
+                    StringBuilder argName = new StringBuilder(arg.NormalizedFullName());
+                    if (isNullable && (nullability is null || nullability.Count == 1)) argName.Append('?');
+                    else if (isNullable && nullability?[i] == 2) argName.Append('?');
+                    argNames.Add(argName.ToString());
+                }
+            } else argNames = type.GenericParameters.Select(p => p.NormalizedName()).ToList();
+            
+            if (type.FullName.StartsWith("System.Nullable") && argNames.Count == 1)
+            {
+                sb.Clear();
+                sb.Append(argNames[0]);
+                return sb.ToString();
+            }
+            
             sb.Append('<');
-            sb.Append(string.Join(", ", genericNames));
+            sb.Append(string.Join(", ", argNames));
             sb.Append('>');
             return sb.ToString();
+
+            // var enumerable = genericNames.ToList();
+            // if (enumerable.Count == 0) return sb.ToString();
+            //
+            // sb.Append('<');
+            // sb.Append(string.Join(", ", enumerable));
+            // sb.Append('>');
+            // return sb.ToString();
         }
 
         public string NormalizedFullName()
@@ -72,14 +104,14 @@ public static class TypeDefinitionExtensions
             StringBuilder sb = new StringBuilder();
             if (type.DeclaringType is null)
             {
-                sb.Append(type.Namespace);
+                if (!type.FullName.StartsWith("System.Nullable")) sb.Append(type.Namespace);
                 if (sb.Length > 0) sb.Append('.');
                 sb.Append(type.NormalizedName());
             }
             else
             {
-                Stack<TypeDefinition> stack = new Stack<TypeDefinition>();
-                TypeDefinition? current = type;
+                Stack<TypeReference> stack = new Stack<TypeReference>();
+                TypeReference? current = type;
                 while (current is not null)
                 {
                     stack.Push(current);
@@ -88,7 +120,7 @@ public static class TypeDefinitionExtensions
                 
                 while (stack.Count > 0)
                 {
-                    TypeDefinition t = stack.Pop();
+                    TypeReference t = stack.Pop();
                     sb.Append(t.Namespace);
                     if (sb.Length > 0) sb.Append(t.IsNested ? '+' : '.');
                     sb.Append(t.NormalizedName());
@@ -120,25 +152,25 @@ public static class TypeDefinitionExtensions
 
         public PropertyDefinition? GetProperty(string name)
         {
-            return !type.HasProperties ? null : type.Properties.FirstOrDefault(property => property.Name == name);
+            return !type.Resolve().HasProperties ? null : type.Resolve().Properties.FirstOrDefault(property => property.Name == name);
         }
 
         public FieldDefinition? GetField(string name)
         {
-            return !type.HasFields ? null : type.Fields.FirstOrDefault(field => field.Name == name);
+            return !type.Resolve().HasFields ? null : type.Resolve().Fields.FirstOrDefault(field => field.Name == name);
         }
 
         public MethodDefinition? GetMethod(string name)
         {
-            return !type.HasMethods ? null : type.Methods.FirstOrDefault(method => method.Name == name);
+            return !type.Resolve().HasMethods ? null : type.Resolve().Methods.FirstOrDefault(method => method.Name == name);
         }
 
         public List<TypeDefinition> GetNestedTypes()
         {
-            if (!type.HasNestedTypes) return [];
+            if (!type.Resolve().HasNestedTypes) return [];
         
             List<TypeDefinition> nestedTypes = [];
-            foreach (var nested in type.NestedTypes)
+            foreach (var nested in type.Resolve().NestedTypes)
             {
                 nestedTypes.Add(nested);
                 nestedTypes.AddRange(nested.GetNestedTypes());
@@ -148,9 +180,9 @@ public static class TypeDefinitionExtensions
 
         public TypeDefinition? GetType(string name, bool fullName = true)
         {
-            if (!type.HasNestedTypes) return null;
+            if (!type.Resolve().HasNestedTypes) return null;
         
-            foreach (var nested in type.NestedTypes)
+            foreach (var nested in type.Resolve().NestedTypes)
             {
                 if (fullName && nested.FullName == name || !fullName && nested.Name == name) return nested;
 
