@@ -8,9 +8,9 @@ public static class GenericExtensions
 {
     extension(GenericInstanceType type)
     {
-        public List<TypeReference> GetGenericArguments()
+        public List<string> NormalizedArgumentNames()
         {
-            return type.GenericArguments.ToList();
+            return type.GenericArguments.Select(arg => arg.NormalizedFullName()).ToList();
         }
     }
 }

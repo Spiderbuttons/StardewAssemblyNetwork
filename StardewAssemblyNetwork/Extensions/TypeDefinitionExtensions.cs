@@ -10,6 +10,8 @@ public static class TypeDefinitionExtensions
     {
         public bool TryGetBuiltInName([NotNullWhen(true)] out string? builtInName)
         { 
+            Console.WriteLine(type.FullName);
+            
             builtInName = type.FullName switch
             {
                 "System.Boolean" => "bool",
@@ -35,9 +37,11 @@ public static class TypeDefinitionExtensions
             if (builtInName is not null) return true;
             if (!type.FullName.StartsWith("System.Nullable") || type is not GenericInstanceType nullableType) return false;
 
-            var testthing = "test";
-
-            return false;
+            var argNames = nullableType.NormalizedArgumentNames();
+            if (argNames.Count == 0) return false;
+            
+            builtInName = string.Join(", ", nullableType.NormalizedArgumentNames()) + "?";
+            return true;
         }
 
         public string NameWithoutGenerics()

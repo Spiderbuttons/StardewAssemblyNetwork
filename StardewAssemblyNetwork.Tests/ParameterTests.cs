@@ -189,6 +189,17 @@ public class ParameterTests
     }
     
     [Fact]
+    public void NullableBuiltInReferenceTypeParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("string? parameter");
+    }
+    
+    [Fact]
     public void NullableStructTypeParameter()
     {
         var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
@@ -384,5 +395,38 @@ public class ParameterTests
             .NotBeEmpty().And
             .HaveCount(1).And
             .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericType<int?>? singleGeneric");
+    }
+    
+    [Fact]
+    public void GenericStructTypeNullableParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericStruct<int?> singleGeneric");
+    }
+    
+    [Fact]
+    public void NullableGenericStructTypeParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericStruct<int>? singleGeneric");
+    }
+    
+    [Fact]
+    public void GenericStructTypeNullableGenericParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericStruct<SingleGenericType<int>?> singleGeneric");
     }
 }

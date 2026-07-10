@@ -17,7 +17,11 @@ public static class ParameterDefinitionExtensions
             if (param.IsReadOnly()) sb.Append("readonly ");
 
             string typeName;
-            if (param.ParameterType is GenericInstanceType or ArrayType { ElementType: GenericInstanceType })
+            if (param.ParameterType.FullName.StartsWith("System.Nullable"))
+            {
+                typeName = param.ParameterType.NormalizedFullName();
+            }
+            else if (param.ParameterType is GenericInstanceType or ArrayType { ElementType: GenericInstanceType })
             {
                 GenericInstanceType generic = param switch 
                 {
@@ -37,11 +41,11 @@ public static class ParameterDefinitionExtensions
                 
                 if (generic.DeclaringType is not null)
                 {
-                    typeName = $"{generic.DeclaringType.Resolve().NormalizedFullName()}<{string.Join(", ", args)}>";
+                    typeName = $"{generic.DeclaringType.NormalizedFullName()}<{string.Join(", ", args)}>";
                 }
                 else
                 {
-                    typeName = $"{generic.Namespace}.{generic.Resolve().NameWithoutGenerics()}<{string.Join(", ", args)}>";
+                    typeName = $"{generic.Namespace}.{generic.NameWithoutGenerics()}<{string.Join(", ", args)}>";
                 }
             }
             else typeName = param.ParameterType.Resolve().NormalizedFullName();

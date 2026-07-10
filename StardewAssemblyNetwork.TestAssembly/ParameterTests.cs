@@ -39,6 +39,8 @@ public class ParameterTests
     
     public void NullableReferenceTypeParameter(ParameterTests? parameter) {}
     
+    public void NullableBuiltInReferenceTypeParameter(string? parameter) {}
+    
     public void NullableStructTypeParameter(StructType? parameter) {}
     
     public void AllNullableParameters(int? index1, int? index2, int? index3) {}
@@ -74,4 +76,10 @@ public class ParameterTests
     public void DoubleGenericNullableParameter(DoubleGenericType<int?, string?> doubleGeneric) {}
     
     public void NullableGenericNullableParameter(SingleGenericType<int?>? singleGeneric) {}
+    
+    public void GenericStructTypeNullableParameter(SingleGenericStruct<int?> singleGeneric) {}
+    
+    public void NullableGenericStructTypeParameter(SingleGenericStruct<int>? singleGeneric) {}
+    
+    public void GenericStructTypeNullableGenericParameter(SingleGenericStruct<SingleGenericType<int>?> singleGeneric) {}
 }
