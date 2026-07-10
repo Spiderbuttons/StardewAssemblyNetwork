@@ -16,28 +16,7 @@ public static class ParameterDefinitionExtensions
             if (param.IsByReference()) sb.Append("ref ");
             if (param.IsReadOnly()) sb.Append("readonly ");
 
-            List<byte>? directNullability = null;
-            List<byte>? contextualNullability = null;
-            bool isNullableByType = param.IsNullableByType();
-            bool isNullableByAttribute = param.IsNullableByAttribute(out directNullability);
-            bool isNullableByContext = !isNullableByAttribute && param.IsNullableByContext(method, out contextualNullability);
-            bool isNullable = isNullableByType || isNullableByAttribute || isNullableByContext;
-
             string typeName;
-            // if (param.IsNullableByType())
-            // {
-            //     if (param.ParameterType is GenericInstanceType { HasGenericArguments: true } generic)
-            //     {
-            //         var args = generic.GenericArguments.Select(arg => arg.Resolve().NormalizedFullName());
-            //         typeName = $"{string.Join(", ", args)}";
-            //     } else if (param.ParameterType is ArrayType array)
-            //     {
-            //         var args = array.ElementType.GenericParameters.Select(arg => arg.Resolve().NormalizedFullName());
-            //         typeName = $"{string.Join(", ", args)}";
-            //     }
-            //     else typeName = param.ParameterType.Resolve().NormalizedFullName();
-            // }
-            // else 
             if (param.ParameterType is GenericInstanceType or ArrayType { ElementType: GenericInstanceType })
             {
                 GenericInstanceType generic = param switch 
@@ -54,35 +33,9 @@ public static class ParameterDefinitionExtensions
                 }
 
                 List<string> args = [];
-                // foreach (var arg in genericArgs)
-                // {
-                //     StringBuilder argName = new StringBuilder(arg.Resolve().NormalizedFullName());
-                //     if (resolvedGenericType.IsNullable(out _)) sb.Append('?');
-                //     args.Add(argName.ToString());
-                // }
+                args.AddRange(generic.GenericArguments.Select(arg => arg.NormalizedFullName()));
                 
-                foreach (var arg in generic.GenericArguments)
-                {
-                    var resolved = arg.Resolve();
-                    bool isParamNullable = param.IsNullable(out var paramNullability, method);
-                    bool isArgNullable = resolved.IsNullable(out var argNullability, param);
-                    if (arg is GenericInstanceType gType)
-                    {
-                        args.Add(arg.NormalizedFullName());
-                    }
-                    else
-                    {
-                        StringBuilder name = new StringBuilder(arg.NormalizedFullName());
-                        if (isArgNullable || isNullableByAttribute) name.Append('?');
-                        args.Add(name.ToString());
-                    }
-                }
-
-                if (param.IsNullableByType())
-                {
-                    typeName = string.Join(", ", args);
-                }
-                else if (generic.DeclaringType is not null)
+                if (generic.DeclaringType is not null)
                 {
                     typeName = $"{generic.DeclaringType.Resolve().NormalizedFullName()}<{string.Join(", ", args)}>";
                 }
@@ -90,7 +43,6 @@ public static class ParameterDefinitionExtensions
                 {
                     typeName = $"{generic.Namespace}.{generic.Resolve().NameWithoutGenerics()}<{string.Join(", ", args)}>";
                 }
-                Console.WriteLine("Got here");
             }
             else typeName = param.ParameterType.Resolve().NormalizedFullName();
             
@@ -98,31 +50,7 @@ public static class ParameterDefinitionExtensions
             if (param.IsDynamic() && typeName == "object") typeName = "dynamic";
 
             sb.Append(typeName);
-            if (isNullable)
-            {
-                var nullability = directNullability ?? contextualNullability ?? [];
-                if (param.ParameterType is ArrayType array)
-                {
-                    var resolvedArray = array.Resolve();
-                    bool isArrayNullable = resolvedArray.IsNullable(out var arrayNullability, param);
-                    if (isNullableByContext && contextualNullability?.Count == 1)
-                    {
-                        if (isArrayNullable) sb.Append('?');
-                        sb.Append("[]?");
-                    }
-                    else
-                    {
-                        if ((arrayNullability ?? nullability).ElementAtOrDefault(1) is 2) sb.Append('?');
-                        sb.Append("[]");
-                        if ((arrayNullability ?? nullability).ElementAtOrDefault(0) is 2) sb.Append('?');
-                    }
-                }
-                else if (!isNullableByAttribute) sb.Append('?');
-            }
-            else
-            {
-                if (param.ParameterType is ArrayType) sb.Append("[]");
-            }
+            if (param.ParameterType is ArrayType) sb.Append("[]");
 
             sb.Append(' ');
             sb.Append(param.Name);

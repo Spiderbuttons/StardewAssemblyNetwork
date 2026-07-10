@@ -32,13 +32,12 @@ public static class TypeDefinitionExtensions
                 "System.Object" when !type.Resolve().IsDynamic() => "object",
                 _ => null
             };
-            return builtInName is not null;
+            if (builtInName is not null) return true;
+            if (!type.FullName.StartsWith("System.Nullable") || type is not GenericInstanceType nullableType) return false;
 
-            if (!type.FullName.StartsWith("System.Nullable")) return false;
-            if (!type.HasGenericParameters || type.GenericParameters.Count != 1) return false;
-            
-            builtInName = $"{type.GenericParameters[0].Name}?";
-            return true;
+            var testthing = "test";
+
+            return false;
         }
 
         public string NameWithoutGenerics()
@@ -54,44 +53,15 @@ public static class TypeDefinitionExtensions
             
             StringBuilder sb = new StringBuilder(type.NameWithoutGenerics());
             List<string> argNames = [];
-            // IEnumerable<string> genericNames = type switch
-            // {
-            //     IGenericInstance { HasGenericArguments: true } genericInstance => genericInstance.GenericArguments.Select(arg => arg.NormalizedName()),
-            //     { HasGenericParameters: true } => type.GenericParameters.Select(p => p.Name),
-            //     _ => []
-            // };
             if (type is GenericInstanceType generic)
             {
-                bool isNullable = generic.Resolve().IsNullable(out var nullability);
-                for (var i = 0; i < generic.GenericArguments.Count; i++)
-                {
-                    var arg = generic.GenericArguments[i];
-                    StringBuilder argName = new StringBuilder(arg.NormalizedFullName());
-                    if (isNullable && (nullability is null || nullability.Count == 1)) argName.Append('?');
-                    else if (isNullable && nullability?[i] == 2) argName.Append('?');
-                    argNames.Add(argName.ToString());
-                }
+                argNames.AddRange(generic.GenericArguments.Select(t => t.NormalizedFullName()));
             } else argNames = type.GenericParameters.Select(p => p.NormalizedName()).ToList();
-            
-            if (type.FullName.StartsWith("System.Nullable") && argNames.Count == 1)
-            {
-                sb.Clear();
-                sb.Append(argNames[0]);
-                return sb.ToString();
-            }
             
             sb.Append('<');
             sb.Append(string.Join(", ", argNames));
             sb.Append('>');
             return sb.ToString();
-
-            // var enumerable = genericNames.ToList();
-            // if (enumerable.Count == 0) return sb.ToString();
-            //
-            // sb.Append('<');
-            // sb.Append(string.Join(", ", enumerable));
-            // sb.Append('>');
-            // return sb.ToString();
         }
 
         public string NormalizedFullName()
@@ -104,7 +74,7 @@ public static class TypeDefinitionExtensions
             StringBuilder sb = new StringBuilder();
             if (type.DeclaringType is null)
             {
-                if (!type.FullName.StartsWith("System.Nullable")) sb.Append(type.Namespace);
+                sb.Append(type.Namespace);
                 if (sb.Length > 0) sb.Append('.');
                 sb.Append(type.NormalizedName());
             }
