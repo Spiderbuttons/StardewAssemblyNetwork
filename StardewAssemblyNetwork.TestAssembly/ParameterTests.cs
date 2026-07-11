@@ -82,4 +82,16 @@ public class ParameterTests
     public void NullableGenericStructTypeParameter(SingleGenericStruct<int>? singleGeneric) {}
     
     public void GenericStructTypeNullableGenericParameter(SingleGenericStruct<SingleGenericType<int>?> singleGeneric) {}
+    
+    public void TupleParameter((int, string) tuple) {}
+    
+    public void NullableTupleParameter((int, string)? tuple) {}
+    
+    public void TupleWithFirstNullableParameter((string?, int) tuple) {}
+    
+    public void TupleWithSecondNullableParameter((int, string?) tuple) {}
+    
+    public void TupleWithBothNullableParameters((int?, string?) tuple) {}
+
+    public void CompletelyNullableTuple((int?, string?)? tuple) {}
 }

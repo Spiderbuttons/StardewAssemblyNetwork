@@ -34,11 +34,13 @@ public static class ParameterDefinitionExtensions
                     if (!nullableArray.ElementType.IsValueType)
                     {
                         typeName = $"{nullableArray.ElementType.NormalizedFullName()}";
-                    } else 
+                    }
+                    else
                     {
                         typeName = $"{nullableArray.ElementType.NormalizedFullName()}[]";
                     }
-                } else typeName = param.ParameterType.NormalizedFullName();
+                }
+                else typeName = param.ParameterType.NormalizedFullName();
             }
             else if (param.ParameterType is GenericInstanceType or ArrayType { ElementType: GenericInstanceType })
             {
@@ -56,20 +58,44 @@ public static class ParameterDefinitionExtensions
                 }
 
                 List<string> args = [];
-                args.AddRange(generic.GenericArguments.Select(arg => arg.NormalizedFullName()));
-                
-                if (generic.DeclaringType is not null)
+                args.AddRange(generic.GenericArguments.Select(arg =>
                 {
-                    typeName = $"{generic.DeclaringType.NormalizedFullName()}<{string.Join(", ", args)}>";
+                    if (arg.FullName.StartsWith("System.Nullable")) return arg.NormalizedFullName();
+
+                    var argIndex = generic.GenericArguments.IndexOf(arg) + 1;
+                    if (argIndex >= nullableData.ArrayData?.Length)
+                    {
+                        // Idk why this happens sometimes, I guess sometimes the first byte gets wrapped into context... ?
+                        argIndex--;
+                    }
+                    
+                    if (nullableData.SingleByteData is 2 || 
+                        nullableData.ArrayData?.ElementAtOrDefault(argIndex) is 2)
+                    {
+                        return $"{arg.NormalizedFullName()}?";
+                    }
+                    
+                    return arg.NormalizedFullName();
+                }));
+
+                if (!generic.FullName.StartsWith("System.ValueTuple"))
+                {
+                    if (generic.DeclaringType is not null)
+                    {
+                        typeName = $"{generic.DeclaringType.NormalizedFullName()}<{string.Join(", ", args)}>";
+                    }
+                    else
+                    {
+                        typeName = $"{generic.Namespace}.{generic.NameWithoutGenerics()}<{string.Join(", ", args)}>";
+                    }
                 }
                 else
                 {
-                    typeName = $"{generic.Namespace}.{generic.NameWithoutGenerics()}<{string.Join(", ", args)}>";
+                    typeName = $"({string.Join(", ", args)})";
                 }
             }
             else
             {
-                Console.WriteLine("yaaaa");
                 typeName = param.ParameterType.Resolve().NormalizedFullName();
             }
             

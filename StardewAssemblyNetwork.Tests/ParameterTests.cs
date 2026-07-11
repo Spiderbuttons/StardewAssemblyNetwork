@@ -427,6 +427,72 @@ public class ParameterTests
         parameters.Should()
             .NotBeEmpty().And
             .HaveCount(1).And
-            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericStruct<SingleGenericType<int>?> singleGeneric");
+            .Contain("StardewAssemblyNetwork.TestAssembly.SingleGenericStruct<StardewAssemblyNetwork.TestAssembly.SingleGenericType<int>?> singleGeneric");
+    }
+    
+    [Fact]
+    public void TupleParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("(int, string) tuple");
+    }
+    
+    [Fact]
+    public void NullableTupleParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("(int, string)? tuple");
+    }
+    
+    [Fact]
+    public void TupleWithFirstNullableParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("(string?, int) tuple");
+    }
+    
+    [Fact]
+    public void TupleWithSecondNullableParameter()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("(int, string?) tuple");
+    }
+    
+    [Fact]
+    public void TupleWithBothNullableParameters()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("(int?, string?) tuple");
+    }
+    
+    [Fact]
+    public void CompletelyNullableTuple()
+    {
+        var method = GetMethod(MethodBase.GetCurrentMethod()!.Name);
+        var parameters = method.GetParameters().Select(x => x.NormalizedFullName(method)).ToList();
+        parameters.Should()
+            .NotBeEmpty().And
+            .HaveCount(1).And
+            .Contain("(int?, string?)? tuple");
     }
 }

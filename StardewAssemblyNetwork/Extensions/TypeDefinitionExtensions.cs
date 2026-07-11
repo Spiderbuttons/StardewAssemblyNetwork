@@ -2,6 +2,7 @@
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Mono.Cecil;
+using StardewAssemblyNetwork.TypeParsing;
 
 namespace StardewAssemblyNetwork.Extensions;
 
@@ -36,14 +37,26 @@ public static class TypeDefinitionExtensions
                 _ => null
             };
             if (builtInName is not null) return true;
-            Console.WriteLine(type.GetType());
-            if (!type.FullName.StartsWith("System.Nullable") || type is not GenericInstanceType nullableType) return false;
-
-            var argNames = nullableType.NormalizedArgumentNames();
-            if (argNames.Count == 0) return false;
             
-            builtInName = string.Join(", ", nullableType.NormalizedArgumentNames()) + "?";
-            return true;
+            if (type.FullName.StartsWith("System.Nullable") && type is GenericInstanceType nullableType)
+            {
+                var argNames = nullableType.NormalizedArgumentNames();
+                if (argNames.Count == 0) return false;
+            
+                builtInName = string.Join(", ", nullableType.NormalizedArgumentNames()) + "?";
+                return true;
+            }
+
+            if (type.FullName.StartsWith("System.ValueTuple") && type is GenericInstanceType genericType)
+            {
+                var argNames = genericType.NormalizedArgumentNames();
+                if (argNames.Count == 0) return false;
+                
+                builtInName = "(" + string.Join(", ", argNames) + ")";
+                return true;
+            }
+
+            return false;
         }
 
         public string NameWithoutGenerics()
