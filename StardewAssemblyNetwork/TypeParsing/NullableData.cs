@@ -33,16 +33,31 @@ public class NullableData
         IsContext = isContext;
     }
 
-    public static NullableData GetNullabilityData(ICustomAttributeProvider provider)
+    public bool ShouldUseContext()
+    {
+        return ArrayData is null && SingleByteData is null && NullableContext is not null;
+    }
+
+    public byte GetContextualByte()
+    {
+        return NullableContext?.SingleByteData ?? throw new InvalidOperationException("No contextual nullability data available.");
+    }
+
+    public static NullableData GetNullabilityData(ICustomAttributeProvider provider, ICustomAttributeProvider? parentContext = null)
     {
         object? byteData = null;
         if (provider.TryGetAttribute("NullableAttribute", out var directAttr) && directAttr.HasConstructorArguments)
         {
-            byteData = directAttr.ConstructorArguments[0].Value;
+            if (directAttr.ConstructorArguments[0].Value is CustomAttributeArgument[] args)
+            {
+                if (args.Length == 1) byteData = (byte)args[0].Value;
+                else byteData = args.Select(arg => arg.Value).OfType<byte>().ToArray();
+            }
+            else byteData = directAttr.ConstructorArguments[0].Value;
         }
         
         NullableData result = new NullableData(provider, byteData, false);
-        ICustomAttributeProvider? parentContextProvider = provider switch 
+        ICustomAttributeProvider? parentContextProvider = parentContext ?? provider switch 
         {
             MethodDefinition method => method.DeclaringType,
             IMemberDefinition { DeclaringType: not null } member => member.DeclaringType,
@@ -78,7 +93,9 @@ public class NullableData
         object? byteData = null;
         if (param.TryGetAttribute("NullableAttribute", out var directAttr) && directAttr.HasConstructorArguments)
         {
-            byteData = directAttr.ConstructorArguments[0].Value;
+            var args = (directAttr.ConstructorArguments[0].Value as CustomAttributeArgument[])!;
+            if (args.Length == 1) byteData = (byte)args[0].Value;
+            else byteData = args.Select(arg => arg.Value).OfType<byte>().ToArray();
         }
         
         NullableData result = new NullableData(param, byteData, false);
@@ -105,4 +122,22 @@ public class NullableData
         
         return result;
     }
+
+    // private static NullableData GetNullabilityForArrayType(TypeDefinition array, ICustomAttributeProvider parentContext)
+    // {
+    //     if (!array.IsArray) throw new ArgumentException("TypeDefinition is not an array type.", nameof(array));
+    //     object? byteData = null;
+    //     if (array.TryGetAttribute("NullableAttribute", out var directAttr) && directAttr.HasConstructorArguments)
+    //     {
+    //         if (directAttr.ConstructorArguments[0].Value is CustomAttributeArgument[] args)
+    //         {
+    //             if (args.Length == 1) byteData = (byte)args[0].Value;
+    //             else byteData = args.Select(arg => arg.Value).OfType<byte>().ToArray();
+    //         }
+    //         else byteData = directAttr.ConstructorArguments[0].Value;
+    //     }
+    //     
+    //     NullableData result = new NullableData(array, byteData, false);
+    //     ICustomAttributeProvider? parentContextProvider = parentContext;
+    // }
 }

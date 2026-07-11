@@ -11,6 +11,15 @@ public static class ParameterDefinitionExtensions
         public string NormalizedFullName(MethodDefinition method)
         {
             StringBuilder sb = new StringBuilder();
+            NullableData nullableData = NullableData.GetNullabilityData(param, method);
+            NullableData? arrayNullableData = null;
+            if (param.ParameterType is ArrayType array)
+            {
+                var resolvedArray = array.Resolve();
+                arrayNullableData = NullableData.GetNullabilityData(resolvedArray);
+            }
+            
+            bool shouldUseContextualNull = nullableData.SingleByteData is null && nullableData.ArrayData is null && nullableData.NullableContext is not null;
             
             if (param.IsIn && !param.IsReadOnly()) sb.Append("in ");
             if (param.IsOut) sb.Append("out ");
@@ -55,13 +64,36 @@ public static class ParameterDefinitionExtensions
             if (param.IsDynamic() && typeName == "object") typeName = "dynamic";
 
             sb.Append(typeName);
-            if (param.ParameterType is ArrayType) sb.Append("[]");
-
-            NullableData nullableData = NullableData.GetNullabilityData(param, method);
-            if (nullableData.SingleByteData is null && nullableData.ArrayData is null &&
-                nullableData.NullableContext is { } ctx)
+            if (param.ParameterType is ArrayType arr)
             {
-                if (ctx.SingleByteData is 2) sb.Append('?');
+                var resolvedArray = arr.Resolve();
+                var resolvedElement = resolvedArray.GetElementType().Resolve();
+                NullableData elementNullability = NullableData.GetNullabilityData(resolvedElement, resolvedArray);
+                bool shouldUseElementContext = elementNullability.SingleByteData is null && elementNullability.ArrayData is null && elementNullability.NullableContext is not null;
+
+                if (resolvedElement.IsValueType)
+                {
+                    if (elementNullability.ShouldUseContext() && elementNullability.GetContextualByte() is 2 || elementNullability.SingleByteData is 2 || elementNullability.ArrayData?.ElementAtOrDefault(0) is 2)
+                    {
+                        sb.Append('?');
+                    }
+                }
+                else if ((nullableData.ShouldUseContext() && nullableData.GetContextualByte() is 2) ||
+                    nullableData.SingleByteData is 2 || nullableData.ArrayData?.ElementAtOrDefault(1) is 2)
+                {
+                    sb.Append('?');
+                }
+                
+                sb.Append("[]");
+                if ((nullableData.ShouldUseContext() && nullableData.GetContextualByte() is 2) ||
+                    nullableData.SingleByteData is 2 || nullableData.ArrayData?.ElementAtOrDefault(0) is 2)
+                {
+                    sb.Append('?');
+                }
+            } else {
+                if (shouldUseContextualNull) {
+                    if (nullableData.NullableContext?.SingleByteData is 2) sb.Append('?');
+                }
             }
 
             sb.Append(' ');
