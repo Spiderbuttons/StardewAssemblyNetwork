@@ -29,7 +29,16 @@ public static class ParameterDefinitionExtensions
             string typeName;
             if (param.ParameterType.FullName.StartsWith("System.Nullable"))
             {
-                typeName = param.ParameterType.NormalizedFullName();
+                if (param.ParameterType is ArrayType nullableArray)
+                {
+                    if (!nullableArray.ElementType.IsValueType)
+                    {
+                        typeName = $"{nullableArray.ElementType.NormalizedFullName()}";
+                    } else 
+                    {
+                        typeName = $"{nullableArray.ElementType.NormalizedFullName()}[]";
+                    }
+                } else typeName = param.ParameterType.NormalizedFullName();
             }
             else if (param.ParameterType is GenericInstanceType or ArrayType { ElementType: GenericInstanceType })
             {
@@ -58,13 +67,17 @@ public static class ParameterDefinitionExtensions
                     typeName = $"{generic.Namespace}.{generic.NameWithoutGenerics()}<{string.Join(", ", args)}>";
                 }
             }
-            else typeName = param.ParameterType.Resolve().NormalizedFullName();
+            else
+            {
+                Console.WriteLine("yaaaa");
+                typeName = param.ParameterType.Resolve().NormalizedFullName();
+            }
             
             afterGenerics:
             if (param.IsDynamic() && typeName == "object") typeName = "dynamic";
 
             sb.Append(typeName);
-            if (param.ParameterType is ArrayType arr)
+            if (!param.ParameterType.FullName.StartsWith("System.Nullable") && param.ParameterType is ArrayType arr)
             {
                 var resolvedArray = arr.Resolve();
                 var resolvedElement = resolvedArray.GetElementType().Resolve();

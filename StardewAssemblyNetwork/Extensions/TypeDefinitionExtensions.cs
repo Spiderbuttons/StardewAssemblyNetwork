@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Mono.Cecil;
 
@@ -35,6 +36,7 @@ public static class TypeDefinitionExtensions
                 _ => null
             };
             if (builtInName is not null) return true;
+            Console.WriteLine(type.GetType());
             if (!type.FullName.StartsWith("System.Nullable") || type is not GenericInstanceType nullableType) return false;
 
             var argNames = nullableType.NormalizedArgumentNames();
