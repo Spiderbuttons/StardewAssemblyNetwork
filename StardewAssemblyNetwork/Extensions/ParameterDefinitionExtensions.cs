@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Mono.Cecil;
+using StardewAssemblyNetwork.TypeParsing;
 
 namespace StardewAssemblyNetwork.Extensions;
 
@@ -7,7 +8,7 @@ public static class ParameterDefinitionExtensions
 {
     extension(ParameterDefinition param)
     {
-        public string NormalizedFullName(ICustomAttributeProvider method)
+        public string NormalizedFullName(MethodDefinition method)
         {
             StringBuilder sb = new StringBuilder();
             
@@ -55,6 +56,13 @@ public static class ParameterDefinitionExtensions
 
             sb.Append(typeName);
             if (param.ParameterType is ArrayType) sb.Append("[]");
+
+            NullableData nullableData = NullableData.GetNullabilityData(param, method);
+            if (nullableData.SingleByteData is null && nullableData.ArrayData is null &&
+                nullableData.NullableContext is { } ctx)
+            {
+                if (ctx.SingleByteData is 2) sb.Append('?');
+            }
 
             sb.Append(' ');
             sb.Append(param.Name);
